@@ -130,7 +130,7 @@ class gally_launcher:
                 print("zipfile : %s" % zip_file)
                 exit()
             else:
-                _file.extract_archive(zip_file, java_directory)
+                _file.extract_zip(zip_file, java_directory)
 
         self.java_path = "%s/bin" % jdk_directory
         return True
@@ -338,7 +338,7 @@ class gally_launcher:
         else:
             return False
 
-    def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False):
+    def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False):
         if game_directory == None:
             game_directory = self.profile_gamedir
 
@@ -398,7 +398,7 @@ class gally_launcher:
         command = "\"%s\" %s" % (java, JAVA_ARGUMENT)
         if console == False:
             if self.system == "linux":
-                command = "nohup \"%s\" %s >/dev/null 2>&1 " % (java, JAVA_ARGUMENT)
+                command = "nohup \"%s\" %s" % (java, JAVA_ARGUMENT)
             elif self.system == "windows":
                 command = "start \"\" \"%s\" %s" % (java, JAVA_ARGUMENT)
                 
@@ -408,5 +408,4 @@ class gally_launcher:
         else:
             logging.debug(command)
 
-        if dont_start == False:
-            _file.command(command, console=console)
+        _file.command(command, console=console)

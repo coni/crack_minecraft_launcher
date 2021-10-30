@@ -110,7 +110,7 @@ class minecraft_server:
                 exit()
             else:
                 print(zip_file, java_directory)
-                _file.extract_archive(zip_file, java_directory)
+                _file.extract_zip(zip_file, java_directory)
 
         self.java = "%s/bin/java" % jdk_directory
         return True
@@ -160,7 +160,7 @@ class minecraft_server:
 
         server_properties_file = "%s/server.properties" % self.server_root
         if os.path.isfile(server_properties_file):
-            text_file = _file.get_text(server_properties_file)
+            text_file = _file.get_content_file(server_properties_file)
 
             for line in text_file.splitlines():
                 for i in server_properties:

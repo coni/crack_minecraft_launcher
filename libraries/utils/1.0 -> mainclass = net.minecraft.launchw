@@ -1,7 +1,0 @@
-1.0 -> mainclass = net.minecraft.launchwrapper.Launch,           manifest = rien,                      realite = net.minecraft.client.Main
-1.2.5 -> mainclass = net.minecraft.launchwrapper.Launch,     manifest = net.minecraft.client.Minecraft,realite = manifest
-1.5 -> manifest
-1.7 -> mainclass = net.minecraft.client.main.Main, manifest = net.minecraft.client.Main,               realite = mainclass
-1.10-optifine -> mainclass = net.minecraft.launchwrapper.Launch, manifest = net.minecraft.client.Main, realite = mainclass
-
-net.minecraft.client.Minecraft -> version < 1.2.5

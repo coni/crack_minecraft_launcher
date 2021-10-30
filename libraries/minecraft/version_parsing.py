@@ -1,6 +1,5 @@
 import json
 import os
-import libraries.utils.string as string
 import libraries.utils.web as web
 import libraries.utils._file as _file
 import re
@@ -58,7 +57,6 @@ class parse_minecraft_version:
         else:
             self.inheritsFrom = False
         
-        self.download_client()
         self.mainclass = self.get_mainclass()
         self.version_type = self.get_versionType()
         self.lastest_lwjgl_version = self.get_lastest_lwjgl_version()
@@ -115,7 +113,7 @@ class parse_minecraft_version:
             else:
                 minecraft_root = "%s/%s" % (os.getcwd(), self.minecraft_root)
 
-        default_jar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
+        default_jar = "./%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
         default_jar_fullpath = "%s/%s/%s/%s.jar" % (minecraft_root, self.versions_root, self.version, self.version)
 
         logging.debug("getting jar path %s" % default_jar)
@@ -217,14 +215,14 @@ class parse_minecraft_version:
                     url = "%s/%s" % (i["url"], fullpath)
                     path = fullpath
                 else:
-                    if "downloads" in i:
-                        if "artifact" in i["downloads"]:
-                            url = i["downloads"]["artifact"]["url"]
-                            path = i["downloads"]["artifact"]["path"]
-                        elif "classifiers" in i["downloads"]:
-                            if native in i["downloads"]["classifiers"]:
-                                url = i["downloads"]["classifiers"][native]["url"]
-                                path = i["downloads"]["classifiers"][native]["path"]
+                    if "artifact" in i["downloads"]:
+                        url = i["downloads"]["artifact"]["url"]
+                        path = i["downloads"]["artifact"]["path"]
+                    elif "classifiers" in i["downloads"]:
+                        if native in i["downloads"]["classifiers"]:
+                            url = i["downloads"]["classifiers"][native]["url"]
+                            path = i["downloads"]["classifiers"][native]["path"]
+
                 if url:
                     to_download.append((url, path))
                     
@@ -241,19 +239,8 @@ class parse_minecraft_version:
 
         main_jar = self.get_jar()
         if main_jar:
-            classpath.append("./%s" % main_jar)
+            classpath.append(main_jar)
         
-        # manifest_path = "META-INF/MANIFEST.MF"
-        # for i in classpath:
-        #     archive_file = "%s/%s" % (self.minecraft_root, i)
-        #     if os.path.isfile(archive_file):
-        #         if _file.extract_archive(archive_file, "extracted_jar/%s/" % i, to_extract=manifest_path):
-        #             manifest_text = _file.get_text("extracted_jar/%s/%s" % (i,manifest_path))
-        #             manifest_mainclass = string.find_string(manifest_text, "Main-Class")
-        #             if manifest_mainclass:
-        #                 manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
-        #                 print(manifest_mainclass)
-        # exit()
 
         if inherited_classpath:
             self.classpath = "%s%s%s" % (self.classpath_separator.join(classpath), self.classpath_separator, inherited_classpath)
@@ -331,7 +318,7 @@ class parse_minecraft_version:
 
             web.download(zip_url, zip_filename)
             if os.path.isfile(zip_filename):
-                list_folder_extracted = _file.extract_archive(zip_filename, "%s/%s" % (self.minecraft_root, self.binary_root))
+                list_folder_extracted = _file.extract_zip(zip_filename, "%s/%s" % (self.minecraft_root, self.binary_root))
             
                 for folder in list_folder_extracted:
                     if folder == "lwjgl-%s" % self.lastest_lwjgl_version:
@@ -353,50 +340,21 @@ class parse_minecraft_version:
             with open("debug/mainclass", "r") as mainclass_file:
                 return mainclass_file.read()
 
-        if self.get_versionType() != "snapshot":
-            if self.inheritsFrom:
-                version = self.inheritsFrom
-            else:
-                version = self.version
-
-            version_major = int(version.split(".")[1])
-            if len(version.split(".")) > 2:
-                version_minor = int(version.split(".")[2])
-            else:
-                version_minor = 0
+        re_version = re.search(r"(?P<version>([0-9]+\.[0-9]+(\.[0-9]+)?))(?P<type>(\-)(.+))?", self.version) 
+        if re_version:
+            version = re_version.group("version")
+            version = int(version.split(".")[1])
+            type = re_version.group("type")
         
         if self.inheritsFrom:
             mainclass_inherits = self.inheritsFrom_parse.get_mainclass()
         
-
-        jar_path = "%s/%s" % (self.minecraft_root, self.get_jar())
-        manifest_mainclass = None
-        manifest_path = "META-INF/MANIFEST.MF"
-        if _file.extract_archive(jar_path, ".temp/", to_extract=manifest_path):
-            manifest_text = _file.get_text(".temp/%s" % manifest_path)
-            manifest_mainclass = string.find_string(manifest_text, "Main-Class")
-            if manifest_mainclass:
-                manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
-
-
         if "mainClass" in self.json_loaded:
-            if self.get_versionType() != "snapshot":
-                if version_major <= 2 and version_minor < 5:
-                    return "net.minecraft.client.Minecraft"
-                elif version_major == 2 and version_minor == 5 or version_major > 2 and version_major < 6:
-                    return manifest_mainclass
-
             mainclass = self.json_loaded["mainClass"]
-            return mainclass
-            # mainclass = self.json_loaded["mainClass"]
-            # # if manifest_mainclass:
-            # #     print(manifest_mainclass)
-            # #     exit()
-                
-            # if mainclass == "net.minecraft.launchwrapper.Launch" and manifest_mainclass == None:
-            #     return "net.minecraft.client.Minecraft"
-            # else:
-            #     return mainclass
+            if mainclass == "net.minecraft.launchwrapper.Launch":
+                return "net.minecraft.client.Minecraft"
+            else:
+                return mainclass
         else:
             return mainclass_inherits
 

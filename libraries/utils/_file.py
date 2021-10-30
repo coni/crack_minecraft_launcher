@@ -31,8 +31,6 @@ def get_architechture():
     logging.debug("getting architechture : %s" % architecture)
     return architecture
 
-
-
 def mkdir_recurcive(path):
     logging.debug("[file] making directory %s" % path)
     if os.path.isdir(path):
@@ -86,25 +84,18 @@ def find_folder(folder_name, path="."):
                 list_folders.append(os.path.join(root, folder_name).replace("\\","/"))
     return list_folders
 
-def extract_archive(archive_name, path, to_extract=[]):
-    
-    if type(to_extract) == str:
-        to_extract = [to_extract]
-        
-    if archive_name[-7:] == ".tar.gz":
-        logging.debug("[file] extracting %s to %s" % (archive_name, path) )
-        file = tarfile.open(archive_name)
+def extract_zip(filename, path):
+    if filename[-4:] == ".zip":
+        logging.debug("[file] extracting %s to %s" % (filename, path) )
+        with zipfile.ZipFile(filename, 'r') as zipObj:
+            zipObj.extractall(path=path)
+            return ls(path, type="folder") + ls(path, type="file")
+    elif filename[-7:] == ".tar.gz":
+        logging.debug("[file] extracting %s to %s" % (filename, path) )
+        file = tarfile.open(filename)
         file.extractall(path) 
         file.close()
         return ls(path, type="folder") + ls(path, type="file")
-    else:
-        logging.debug("[file] extracting %s to %s" % (archive_name, path) )
-        with zipfile.ZipFile(archive_name, 'r') as zipObj:
-            archive_files = zipObj.namelist()
-            for i in archive_files:
-                if i in to_extract or to_extract == []:
-                    zipObj.extract(i, path)
-            return ls(path, type="folder") + ls(path, type="file")
 
 def mv(source, destination):
     logging.debug("[file] moving %s to %s" % (source, destination))
@@ -136,12 +127,10 @@ def ls(folder, type="file"):
 
     return list_files
 
-def get_text(file):
-    if os.path.isfile(file):
-        with open(file,'r') as text_file:
-            text = text_file.read()
-        return text
-    return None
+def get_content_file(file):
+    with open(file,'r') as text_file:
+        text = text_file.read()
+    return text
 
 def command(command, console=True):
     logging.debug("[command] executing %s" % command)

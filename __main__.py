@@ -7,91 +7,83 @@ from libraries.launcher.server import minecraft_server
 import libraries.utils.web as web
 import libraries.utils._file as _file
 
-class MyParser(argparse.ArgumentParser):
-    def help(self):
-        self.print_help()
-        sys.exit(2)
-
 if len(sys.argv) > 1:
     arguments = True
 else:
     arguments = False
 
 version = "still_beta_im_sorry_for_the_commit"
-start = False
+should_start = False
 java_argument = None
 type_ = "client"
+
+def list_commands():
+    print("version *version*       e.g: \"version 1.17\"")
+    print("profile *profile*       e.g: \"profile OptiFine\"")
+    print("without_assets               start without assets. Can start the game faster")
+    print("list_versions *type*         type: \"all|release|snapshot|beta|alpha\"")
+    print("list_profiles                 list every profile")
+    print("java_launch *path_to_java*   use it if you know what you are doing")
+    print("username *name*              set username. e.g: \"username coni\"")
+    print("download *version*   download a version without starting the game (doesn't download assets)")
+    print("start                        start the game\n")
+
+all_args = argparse.ArgumentParser()
+all_args.add_argument("-v", "--version", help="load version")
+all_args.add_argument("-lv", "--list_versions", help="list every official versions of Minecraft")
+all_args.add_argument("-d", "--download", help="download client")
+all_args.add_argument("-lp", "--list_profiles", action='store_true', help="list every existing profiles")
+all_args.add_argument("-p", "--profile", help="load profile")
+all_args.add_argument("-w", "--without_assets", action="store_true", help="can start the game much faster but without some texture")
+all_args.add_argument("-u", "--username", help="set username")
+all_args.add_argument("-j", "--java_launch", help="choose your java")
+all_args.add_argument("-debug", "--debug", action="store_true", help="don't show info except warning and error")
+all_args.add_argument("-r", "--root", help="set minecraft root")
+all_args.add_argument("-c", "--credit", action="store_true", help="contributor credit")
+all_args.add_argument("-t", "--type", help="launcher type, for playing as casual or hosting a server (client | server )")
+
+all_args.add_argument("-ja", '--java_argument')
+all_args.add_argument("-g", '--gameDirectory')
+
+all_args.add_argument("-motd", "--motd", help="server: server displayed message (Default = A Minecraft Server")
+all_args.add_argument("-pvp", "--pvp", help="server: friendly fire (Default = true)")
+all_args.add_argument("-difficulty", "--difficulty", help="server: Difficulty (default = easy)")
+all_args.add_argument("-server_port", "--server_port", help="server: Server Port (default = 25565)")
+
+all_args.add_argument("-gamemode", "--gamemode", help="server: player mode (default = survival)")
+all_args.add_argument("-view_distance", "--view_distance", help="server: max distance entities spawn (default = 10)")
+all_args.add_argument("-allow_nether", "--allow_nether", help="server: allowing nether (default = true)")
+all_args.add_argument("-enable_command_block", "--enable_command_block", help="server: enable command block (default = false)")
+all_args.add_argument("-level_name", "--level_name", help="server: world name (defaultl = world)")
+all_args.add_argument("-force_gamemode", "--force_gamemode", help="server: force gamemode for every player (default = false)")
+all_args.add_argument("-hardcore", "--hardcore", help="server: set the server in hardcore (1 life) (default = false)")
+all_args.add_argument("-white_list", "--white_list", help="server: only white list player (from whitelist.json file) can join (default = false)")
+all_args.add_argument("-spawn_npcs", "--spawn_npcs", help="server: spawn_npcs (default = true)")
+all_args.add_argument("-spawn_animals", "--spawn_animals", help="server: spawn animals (default = true)")
+all_args.add_argument("-generate_structures", "--generate_structures", help="server: allow structures in the world (default = true)")
+all_args.add_argument("-max_tick_time", "--max_tick_time", help="server: max tick (default 60000)")
+all_args.add_argument("-max_players", "--max_players", help="server: max players limitation (default 20)")
+all_args.add_argument("-spawn_protection", "--spawn_protection", help="server: zone protected can't be grief by non op player (default = 16)")
+all_args.add_argument("-online_mode", "--online_mode", help="server: prohibit cracked players (default = true)")
+all_args.add_argument("-allow_flight", "--allow_flight", help="server: allow players to fly in survival (default = false)")
+all_args.add_argument("-level_type", "--level_type", help="server: level_type")
+
+all_args.add_argument("-console", "--console", action="store_true", help="java console when starting Minecraft client")
+all_args.add_argument("-update", "--update", action="store_true", help="update the launcher")
+all_args.add_argument("-q", "--quiet", action="store_true", help="don't show any messages")
+all_args.add_argument("-launcher_version", "--launcher_version", action="store_true", help="show launcher version")
+all_args.add_argument("-install", "--install", action="store_true", help="add to path")
+
+all_args.add_argument("-password", "--password", help="password to login to a Mojang account")
+all_args.add_argument("-email", "--email", help="email to login to a Mojang account")
+all_args.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
+all_args.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
+all_args.add_argument("-skin", "--skin", help="(only for offline player) choose skin from a player name")
+
+
+args = vars(all_args.parse_args())
 debug = False
 system = _file.get_os()
-
-parser = MyParser()
-
-parser.add_argument("-t", "--type", help="Launcher type (client|server)")
-
-parser.add_argument("-v", "--version", help="Load version")
-parser.add_argument("-dont_start", "--dont_start", action="store_true", help="Dont start the game")
-parser.add_argument("-r", "--root", help="Set minecraft root")
-parser.add_argument("-j", "--java_runtime", help="Specify your java binary path")
-parser.add_argument("-ja", '--java_argument')
-parser.add_argument("-lv", "--list_versions", help="List Minecraft versions (release|downloaded|snapshot)")
-parser.add_argument("-debug", "--debug", action="store_true", help="Show everything")
-
-parser.add_argument("-console", "--console", action="store_true", help="Java console when starting Minecraft client")
-parser.add_argument("-update", "--update", action="store_true", help="Update the launcher")
-parser.add_argument("-q", "--quiet", action="store_true", help="Don't show any messages")
-parser.add_argument("-launcher_version", "--launcher_version", action="store_true", help="Show launcher version")
-parser.add_argument("-install", "--install", action="store_true", help="EXPERIMENTAL: Add the game to path")
-parser.add_argument("-c", "--credit", action="store_true", help="Credit")
-
-args, unknown = parser.parse_known_args()
-args = vars(args)
-
-if args["type"] == "server" or args["type"] == "s":
-    type_ = "server"
-
-if type_ == "client":
-    parser.add_argument("-d", "--download", help="download client")
-    parser.add_argument("-lp", "--list_profiles", action='store_true', help="list every existing profiles")
-    parser.add_argument("-p", "--profile", help="load profile")
-    parser.add_argument("-w", "--without_assets", action="store_true", help="can start the game much faster but without some texture")
-    parser.add_argument("-u", "--username", help="set username")
-    parser.add_argument("-g", '--gameDirectory')
-
-    parser.add_argument("-password", "--password", help="password to login to a Mojang account")
-    parser.add_argument("-email", "--email", help="email to login to a Mojang account")
-    parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
-    parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
-    parser.add_argument("-skin", "--skin", help="(only for offline player) choose skin from a player name")
-
-elif type_ == "server":
-    parser.add_argument("-motd", "--motd", help="server displayed message (Default = A Minecraft Server")
-    parser.add_argument("-pvp", "--pvp", help="friendly fire (Default = true)")
-    parser.add_argument("-difficulty", "--difficulty", help="Difficulty (default = easy)")
-    parser.add_argument("-server_port", "--server_port", help="Server Port (default = 25565)")
-
-    parser.add_argument("-gamemode", "--gamemode", help="player mode (default = survival)")
-    parser.add_argument("-view_distance", "--view_distance", help="max distance entities spawn (default = 10)")
-    parser.add_argument("-allow_nether", "--allow_nether", help="allowing nether (default = true)")
-    parser.add_argument("-enable_command_block", "--enable_command_block", help="enable command block (default = false)")
-    parser.add_argument("-level_name", "--level_name", help="world name (defaultl = world)")
-    parser.add_argument("-force_gamemode", "--force_gamemode", help="force gamemode for every player (default = false)")
-    parser.add_argument("-hardcore", "--hardcore", help="set the server in hardcore (1 life) (default = false)")
-    parser.add_argument("-white_list", "--white_list", help="only white list player (from whitelist.json file) can join (default = false)")
-    parser.add_argument("-spawn_npcs", "--spawn_npcs", help="spawn_npcs (default = true)")
-    parser.add_argument("-spawn_animals", "--spawn_animals", help="spawn animals (default = true)")
-    parser.add_argument("-generate_structures", "--generate_structures", help="allow structures in the world (default = true)")
-    parser.add_argument("-max_tick_time", "--max_tick_time", help="max tick (default 60000)")
-    parser.add_argument("-max_players", "--max_players", help="max players limitation (default 20)")
-    parser.add_argument("-spawn_protection", "--spawn_protection", help="zone protected can't be grief by non op player (default = 16)")
-    parser.add_argument("-online_mode", "--online_mode", help="prohibit cracked players (default = true)")
-    parser.add_argument("-allow_flight", "--allow_flight", help="allow players to fly in survival (default = false)")
-    parser.add_argument("-level_type", "--level_type", help="level_type")
-
-args = vars(parser.parse_args())
-if args["version"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"]:
-    pass
-else:
-    parser.help()
 
 if sys.argv[0].split(".")[-1] == "exe":
     file_extension = "exe"
@@ -153,6 +145,9 @@ if args["credit"]:
     print("made with love <3")
     print("my code may be trashy, any advice is welcome")
 
+if args["type"] == "server":
+    type_ = "server"
+
 if args["root"]:
     root = args["root"]
 else:
@@ -182,8 +177,8 @@ if type_ == "client":
     if args["list_profiles"]:
         launcher.list_profiles()
 
-    if args["java_runtime"]:
-        java = args["java_runtime"]
+    if args["java_launch"]:
+        java = args["java_launch"]
 
     if args["username"]:
         launcher.set_username(args["username"])
@@ -197,37 +192,117 @@ if type_ == "client":
         launcher.version_parser.set_skin(args["skin"])
         
     if args["profile"]:
-        start = launcher.load_profile(args["profile"])
+        should_start = launcher.load_profile(args["profile"])
 
     if args["version"]:
-        start = launcher.load_version(args["version"])
+        should_start = launcher.load_version(args["version"])
     
     if args["gameDirectory"]:
         game_directory = args["gameDirectory"]
     else:
         game_directory = None
 
-    if start:
+    if should_start:
         if args["email"]:
             launcher.login(args["email"], args["password"])
 
         launcher.download_java(version=launcher.version)
-        launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
+        launcher.start(debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
+
+    if arguments == False:
+        while True:
+            info_prompt = []
+            argument = None
+            exist = False
+
+            if launcher.version_parser.version:
+                info_prompt.append("launch")
+                info_prompt.append("version %s" % launcher.version_parser.version)
+
+            if launcher.profile_id:
+                info_prompt.append("in %s profile" % launcher.profile_id)
+            
+            if launcher.version_parser.username:
+                info_prompt.append("as %s" % launcher.version_parser.username)
+            
+            if assets == False:
+                info_prompt.append("without assets")
+
+            prompt = input("%s > " % " ".join(info_prompt))
+
+            argument_prompt = prompt.split(" ")
+
+            if len(argument_prompt) > 1:
+                argument = argument_prompt[1]
+
+            if argument_prompt[0] == "list_versions":
+                exist = True
+
+                if argument == None:
+                    print("ERROR: usage : list_versions release|downloaded|snapshot|beta|alpha\n")
+
+                launcher.list_versions(argument)
+
+            if argument_prompt[0] == "download":
+                exist = True
+                launcher.download_version(argument)
+
+            if argument_prompt[0] == "list_profiles":
+                exist = True
+                launcher.list_profiles()
+            
+            if argument_prompt[0] == "java_launch":
+                exist = True
+                java = argument
+
+            if argument_prompt[0] == "version":
+                exist = True
+                launcher.load_version(argument)
+                should_start = True
+
+            if argument_prompt[0] == "username":
+                exist = True
+                launcher.set_username(argument)
+
+            if argument_prompt[0] == "profile":
+                exist = True
+                launcher.load_profile(argument)
+                should_start = True
+
+            if argument_prompt[0] == "without_assets":
+                exist = True
+                if assets:
+                    assets = False
+                else:
+                    assets = True
+            
+            if argument_prompt[0] == "help":
+                exist = True
+                list_commands()
+
+            if argument_prompt[0] == "start":
+                exist = True
+                launcher.start(assets=assets, java=java)
+                break
+                
+            if exist == False:
+                list_commands()
 
 elif type_ == "server":
     version = args["version"]
 
-    server = minecraft_server(version=args["version"], server_root=root)
-    server_properties = {}
-
     if args["java_argument"]:
         java_argument = args["java_argument"]
+
+    server = minecraft_server(version=args["version"], server_root=root)
 
     if args["download"]:
         server.download_server()
 
-    if args["java_runtime"]:
-        java = args["java_runtime"]
+    if args["java_launch"]:
+        java = args["java_launch"]
+
+    server_properties = {}
 
     if args["motd"]:
         server_properties["motd"] = args["motd"]
