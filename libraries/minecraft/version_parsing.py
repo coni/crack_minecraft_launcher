@@ -59,7 +59,6 @@ class parse_minecraft_version:
             self.inheritsFrom = False
         
         self.download_client()
-        self.mainclass = self.get_mainclass()
         self.version_type = self.get_versionType()
         self.lastest_lwjgl_version = self.get_lastest_lwjgl_version()
         self.assetIndex = self.get_assetIndex()
@@ -349,10 +348,6 @@ class parse_minecraft_version:
     def get_mainclass(self):
         logging.debug("getting mainclass")
 
-        if os.path.isfile("debug/mainclass"):
-            with open("debug/mainclass", "r") as mainclass_file:
-                return mainclass_file.read()
-
         if self.get_versionType() != "snapshot":
             if self.inheritsFrom:
                 version = self.inheritsFrom
@@ -372,12 +367,14 @@ class parse_minecraft_version:
         jar_path = "%s/%s" % (self.minecraft_root, self.get_jar())
         manifest_mainclass = None
         manifest_path = "META-INF/MANIFEST.MF"
-        if _file.extract_archive(jar_path, ".temp/", to_extract=manifest_path):
-            manifest_text = _file.get_text(".temp/%s" % manifest_path)
-            manifest_mainclass = string.find_string(manifest_text, "Main-Class")
-            if manifest_mainclass:
-                manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
-
+        try:
+            if _file.extract_archive(jar_path, ".temp/", to_extract=manifest_path):
+                manifest_text = _file.get_text(".temp/%s" % manifest_path)
+                manifest_mainclass = string.find_string(manifest_text, "Main-Class")
+                if manifest_mainclass:
+                    manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
+        except:
+            pass
 
         if "mainClass" in self.json_loaded:
             if self.get_versionType() != "snapshot":
@@ -385,18 +382,8 @@ class parse_minecraft_version:
                     return "net.minecraft.client.Minecraft"
                 elif version_major == 2 and version_minor == 5 or version_major > 2 and version_major < 6:
                     return manifest_mainclass
-
             mainclass = self.json_loaded["mainClass"]
             return mainclass
-            # mainclass = self.json_loaded["mainClass"]
-            # # if manifest_mainclass:
-            # #     print(manifest_mainclass)
-            # #     exit()
-                
-            # if mainclass == "net.minecraft.launchwrapper.Launch" and manifest_mainclass == None:
-            #     return "net.minecraft.client.Minecraft"
-            # else:
-            #     return mainclass
         else:
             return mainclass_inherits
 
@@ -472,10 +459,7 @@ class parse_minecraft_version:
 
         if game_directory == None:
             game_directory = "."
-            if os.path.isfile("debug/game_directory"):
-                with open("debug/game_directory", "r") as game_dir_file:
-                    game_directory = game_dir_file.read()
-        
+
         if access_token == None:
             access_token = "xxxxxxxxxx"
         
@@ -535,10 +519,6 @@ class parse_minecraft_version:
 
     def get_java_arguments(self, classpath=None):
         
-        if os.path.isfile("debug/classpath"):
-           classpath_file = open("debug/classpath",'r')
-           classpath = classpath_file.read()
-           
         if classpath == None:
             classpath = self.classpath
 

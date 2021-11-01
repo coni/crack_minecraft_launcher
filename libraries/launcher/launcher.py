@@ -354,7 +354,6 @@ class gally_launcher:
         logging.info("checking binary")
         self.version_parser.download_binary()
 
-        
         if java == None:
             if console:
                 java = "java"
@@ -367,17 +366,43 @@ class gally_launcher:
             java = "%s/%s" % (self.java_path, java)
             
         JAVA_ARGUMENT = []
-        arguments = []
+        
+        classpath = None
+        if os.path.isfile("debug/classpath"):
+           with open("debug/classpath",'r') as classpath_file:
+            classpath = classpath_file.read()
+        
+        mainclass = self.version_parser.get_mainclass()
+        if os.path.isfile("debug/mainclass"):
+            with open("debug/mainclass", "r") as mainclass_file:
+                mainclass = mainclass_file.read()
+
+        if os.path.isfile("debug/game_argument"):
+            with open("debug/game_argument", "r") as game_argument_file:
+                game_argument = game_argument_file.read()
+        else:
+            game_argument = self.version_parser.get_minecraft_arguments(access_token=self.access_token, game_directory=game_directory)
+
+        default_arguments = []
 
         if java_argument:
-            arguments.append(java_argument)
+            default_arguments = java_argument
         elif self.opt_java_arg:
-            arguments.append(self.opt_java_arg)
+            default_arguments = self.opt_java_arg
         else:
-            arguments.append(self.version_parser.get_default_java_arguments())
+            default_arguments = self.version_parser.get_default_java_arguments()
+        if type(default_arguments) == str:
+            default_arguments = [default_arguments]
 
-        arguments += [self.version_parser.get_java_arguments(), self.version_parser.mainclass, self.version_parser.get_minecraft_arguments(access_token=self.access_token, game_directory=game_directory)]
+        if os.path.isfile("debug/java_argument"):
+            os.environ["classpath"] = classpath
+            with open("debug/java_argument", "r") as java_argument_file:
+                java_argument = [java_argument_file.read()]
+        else:
+            java_argument = default_arguments + self.version_parser.get_java_arguments(classpath=classpath)
 
+
+        arguments = [java_argument, mainclass, game_argument]
         for argument in arguments:
             if type(argument) == list:
                 JAVA_ARGUMENT += argument
@@ -385,13 +410,14 @@ class gally_launcher:
                 JAVA_ARGUMENT.append(argument)
 
         JAVA_ARGUMENT = " ".join(JAVA_ARGUMENT)
-
         
         if debug:
-            _file.write_file("debug/latest/classpath", os.environ["classpath"])
-            _file.write_file("debug/latest/mainclass",self.version_parser.mainclass)
-            _file.write_file("debug/latest/java_argument", JAVA_ARGUMENT)
-            _file.write_file("debug/latest/java", java)
+            debug_path = "debug/%s" % self.version
+            _file.write_file("%s/classpath" % debug_path, os.environ["classpath"])
+            _file.write_file("%s/mainclass" % debug_path, mainclass)
+            _file.write_file("%s/java_argument" % debug_path, " ".join(java_argument))
+            _file.write_file("%s/game_argument" % debug_path, " ".join(game_argument))
+            _file.write_file("%s/java" % debug_path, java)
         
         _file.chdir(self.minecraft_root)
             
