@@ -379,7 +379,7 @@ class gally_launcher:
 
         if os.path.isfile("debug/game_argument"):
             with open("debug/game_argument", "r") as game_argument_file:
-                game_argument = game_argument_file.read()
+                game_argument = [game_argument_file.read()]
         else:
             game_argument = self.version_parser.get_minecraft_arguments(access_token=self.access_token, game_directory=game_directory)
 
