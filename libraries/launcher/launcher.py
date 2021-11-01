@@ -45,6 +45,7 @@ class gally_launcher:
         self.profile_gamedir = None
         self.profile_id = None
         self.access_token = None
+        self.localid = None
 
         if os.path.isdir(self.minecraft_root) == False:
             _file.mkdir_recurcive(self.minecraft_root)
@@ -224,17 +225,19 @@ class gally_launcher:
             self.version_parser.set_username(auth_response["selectedProfile"]["name"])
             self.access_token = auth_response["accessToken"]
             
-            localid = web.get_uuid()
+            if self.localid == None:
+                localid = web.get_uuid()
+
             accounts_information = {
                 "accessToken" : self.access_token,
                 "minecraftProfile":auth_response["selectedProfile"],
-                "localId":localid, "username":email,
+                "localId":self.localid, "username":email,
                 "remoteId":auth_response["clientToken"]
             }
 
 
 
-            self.launcher_accounts["accounts"][localid] = accounts_information
+            self.launcher_accounts["accounts"][self.localid] = accounts_information
             _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
 
         else:
@@ -242,7 +245,6 @@ class gally_launcher:
             sys.exit()
     
     def login(self, email, password=None):
-
         for id in self.launcher_accounts["accounts"]:
             if self.launcher_accounts["accounts"][id]["username"] == email:
                 self.localid = id
@@ -267,6 +269,8 @@ class gally_launcher:
         for id in self.launcher_accounts["accounts"]:
             self.localid = id
             if self.launcher_accounts["accounts"][id]["username"] == email:
+                if "accessToken" not in self.launcher_accounts["accounts"][id]:
+                    continue
                 accessToken = self.launcher_accounts["accounts"][id]["accessToken"]
                 clientToken = self.launcher_accounts["accounts"][id]["remoteId"]
                 payload = {
@@ -289,8 +293,8 @@ class gally_launcher:
             "username": email,
             "password": password
         }
-        
-        if web.post("https://authserver.mojang.com/signout", payload, headers=headers).status == 200:
+        resp = web.post("https://authserver.mojang.com/signout", payload, headers=headers)
+        if resp.status == 200 or resp.status == 204:
             return True
         else:
             return False
@@ -312,7 +316,6 @@ class gally_launcher:
                 launcher_accounts.close()
                 return True
         else:
-            print(resp.status)
             return False
 
     def validate(self, accessToken, clientToken):
@@ -327,7 +330,6 @@ class gally_launcher:
         if resp.status == 204:
             return True
         else:
-            print(resp.status)
             return False
 
     def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False):
