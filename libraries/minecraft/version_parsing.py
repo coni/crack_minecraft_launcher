@@ -241,18 +241,6 @@ class parse_minecraft_version:
         main_jar = self.get_jar()
         if main_jar:
             classpath.append("./%s" % main_jar)
-        
-        # manifest_path = "META-INF/MANIFEST.MF"
-        # for i in classpath:
-        #     archive_file = "%s/%s" % (self.minecraft_root, i)
-        #     if os.path.isfile(archive_file):
-        #         if _file.extract_archive(archive_file, "extracted_jar/%s/" % i, to_extract=manifest_path):
-        #             manifest_text = _file.get_text("extracted_jar/%s/%s" % (i,manifest_path))
-        #             manifest_mainclass = string.find_string(manifest_text, "Main-Class")
-        #             if manifest_mainclass:
-        #                 manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
-        #                 print(manifest_mainclass)
-        # exit()
 
         if inherited_classpath:
             self.classpath = "%s%s%s" % (self.classpath_separator.join(classpath), self.classpath_separator, inherited_classpath)
@@ -461,7 +449,7 @@ class parse_minecraft_version:
             game_directory = "."
 
         if access_token == None:
-            access_token = "xxxxxxxxxx"
+            access_token = "??????????"
         
         inherits_arguments = None
         if self.inheritsFrom:

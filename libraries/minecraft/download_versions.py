@@ -10,9 +10,12 @@ class search_version:
         self.versions_path = versions_path
         self.minecraft_root = minecraft_root
 
-        manifest_versions_path = "%s/%s/%s" % (self.minecraft_root, versions_path, "version_manifest_v2.json")
-        _file.rm_rf(manifest_versions_path)
-        web.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path)
+        if web.is_connected():
+            manifest_versions_path = "%s/%s/%s" % (self.minecraft_root, versions_path, "version_manifest_v2.json")
+            _file.rm_rf(manifest_versions_path)
+            web.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path)
+        elif web.is_connected() == False and os.path.isfile(manifest_versions_path) == False:
+            logging.error("Canno't find %s" % manifest_versions_path)
 
         json_file = open(manifest_versions_path,"r")
         self.json_loaded = json.load(json_file) 
@@ -28,13 +31,13 @@ class search_version:
     def get_versions(self, version_type="all"):
         # version_type : old_alpha, old_beta, snapshot, release, downloaded
         logging.debug("check every %s version of minecraft" % version_type)
-        if version_type == "beta":
+        if version_type == "beta" or version_type == "b" or version_type == "old_beta":
             version_type = "old_beta"
 
-        if version_type == "alpha":
+        if version_type == "alpha" or version_type == "a" or version_type == "old_alpha":
             version_type = "old_alpha"
         
-        if version_type == "downloaded":
+        if version_type == "downloaded" or version_type == "d":
             return self.get_downloaded_versions()
 
         versions = []

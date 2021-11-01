@@ -88,7 +88,7 @@ elif type_ == "server":
     parser.add_argument("-level_type", "--level_type", help="level_type")
 
 args = vars(parser.parse_args())
-if args["version"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"]:
+if args["version"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
     pass
 else:
     parser.help()
@@ -207,10 +207,10 @@ if type_ == "client":
     else:
         game_directory = None
 
-    if start:
-        if args["email"]:
-            launcher.login(args["email"], args["password"])
+    if args["email"] and args["logout"] == False:
+        launcher.login(args["email"], args["password"])
 
+    if start:
         launcher.download_java(version=launcher.version)
         launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
 

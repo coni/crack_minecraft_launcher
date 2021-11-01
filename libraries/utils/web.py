@@ -6,6 +6,20 @@ import libraries.utils._file as _file
 import uuid
 import logging
 import json
+import re
+import socket
+
+class obj:
+    def __init__(self):
+        pass
+
+def is_connected():
+    try:
+        socket.create_connection(("1.1.1.1", 53))
+        return True
+    except OSError:
+        pass
+    return False
 
 def download(url, filename, exist_ignore=False, retry=False):
     if exist_ignore:
@@ -71,15 +85,20 @@ def get(url):
     return response.read().decode()
 
 def post(url, data, headers=None):
-        data = json.dumps(data).encode()
-        
-        req =  urllib.request.Request(url)
+    data = json.dumps(data).encode()
+    
+    req =  urllib.request.Request(url)
+    if headers:
         for i in headers:
             req.add_header(i, headers[i])
 
+    try:
         resp = urllib.request.urlopen(
             req,
             data=data
             )
+    except urllib.error.HTTPError as e:
+        resp = obj
+        resp.status = e.code
 
-        return resp
+    return resp

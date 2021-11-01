@@ -10,6 +10,10 @@ import sys
 import getpass
 import re
 
+class obj:
+    def __init__(self):
+        pass
+
 class gally_launcher:
 
     def __init__(self, minecraft_root=None):
@@ -27,7 +31,15 @@ class gally_launcher:
         assets_root = "assets"
         libraries_root = "libraries"
         self.launcher_accounts_file = "%s/launcher_accounts.json" % (minecraft_root)
+        if os.path.isfile(self.launcher_accounts_file):
+            with open(self.launcher_accounts_file, "r") as json_file:
+                self.launcher_accounts = json.loads(json_file.read())
+        else:
+            self.launcher_accounts = {}
 
+        if "accounts" not in self.launcher_accounts:
+            self.launcher_accounts["accounts"] = {}
+        
         self.version = None
         self.opt_java_arg = None
         self.profile_gamedir = None
@@ -171,7 +183,7 @@ class gally_launcher:
 
     def list_versions(self, argument):
         for i in self.downloader.get_versions(argument):
-                print(i)
+            print(i)
             
     def download_version(self, argument):
         self.downloader.download_versions(argument)
@@ -220,73 +232,55 @@ class gally_launcher:
                 "remoteId":auth_response["clientToken"]
             }
 
-            if os.path.isfile(self.launcher_accounts_file):
-                launcher_acc = open(self.launcher_accounts_file,"r")
-                launcher_accounts = json.load(launcher_acc)
-                launcher_acc.close()
-            else:
-                launcher_accounts = {}
 
-            if "accounts" not in launcher_accounts:
-                launcher_accounts["accounts"] = {}
 
-            launcher_accounts["accounts"][localid] = accounts_information
-
-            launcher_acc = open(self.launcher_accounts_file,'w')
-            json.dump(launcher_accounts,launcher_acc)
-            launcher_acc.close()
+            self.launcher_accounts["accounts"][localid] = accounts_information
+            _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
 
         else:
             logging.error("Wrong Email or Password!")
             sys.exit()
     
     def login(self, email, password=None):
-        if os.path.isfile(self.launcher_accounts_file):
-            launcher_acc = open(self.launcher_accounts_file,"r")
-            launcher_accounts = json.load(launcher_acc)
-            launcher_acc.close()
 
-            for id in launcher_accounts["accounts"]:
-                if launcher_accounts["accounts"][id]["username"] == email:
-                    self.localid = id
-                    if "accessToken" in launcher_accounts["accounts"][id]:
-                        self.access_token = launcher_accounts["accounts"][id]["accessToken"]
-                        self.set_username(launcher_accounts["accounts"][id]["minecraftProfile"]["name"])
-                        client_token = launcher_accounts["accounts"][id]["remoteId"]
-                        if self.validate(self.access_token, client_token) == False:
-                            if self.refresh(self.access_token, client_token) == True:
-                                return True
-                        else:
+        for id in self.launcher_accounts["accounts"]:
+            if self.launcher_accounts["accounts"][id]["username"] == email:
+                self.localid = id
+                if "accessToken" in self.launcher_accounts["accounts"][id]:
+                    self.access_token = self.launcher_accounts["accounts"][id]["accessToken"]
+                    self.set_username(self.launcher_accounts["accounts"][id]["minecraftProfile"]["name"])
+                    client_token = self.launcher_accounts["accounts"][id]["remoteId"]
+                    if self.validate(self.access_token, client_token) == False:
+                        if self.refresh(self.access_token, client_token) == True:
                             return True
-                            
+                    else:
+                        return True
+                continue
+
         if password == None:
             password = getpass.getpass("Password to Login : ")
         self.authenticate(email, password)
 
-    def logout(self, email=None, password=None):
-        if email == None:
-            logging.error("Missing email")
-            sys.exit()
-        
+    def logout(self, email, password=None):
         headers={'Content-type':'application/json'}
-        if os.path.isfile(self.launcher_accounts_file):
-            launcher_acc = open(self.launcher_accounts_file,"r")
-            launcher_accounts = json.load(launcher_acc)
-            launcher_acc.close()
 
-            for id in launcher_accounts["accounts"]:
-                if launcher_accounts["accounts"][id]["username"] == email:
-                    accessToken = launcher_accounts["accounts"][id]["accessToken"]
-                    clientToken = launcher_accounts["accounts"][id]["remoteId"]
-                    payload = {
-                        "accessToken": accessToken,
-                        "clientToken": clientToken
-                    }
-                    
-                    if web.post("https://authserver.mojang.com/invalidate", payload, headers=headers).status == 204:
-                        return True
-                    else:
-                        return False
+        for id in self.launcher_accounts["accounts"]:
+            self.localid = id
+            if self.launcher_accounts["accounts"][id]["username"] == email:
+                accessToken = self.launcher_accounts["accounts"][id]["accessToken"]
+                clientToken = self.launcher_accounts["accounts"][id]["remoteId"]
+                payload = {
+                    "accessToken": accessToken,
+                    "clientToken": clientToken
+                }
+                if web.post("https://authserver.mojang.com/invalidate", payload, headers=headers).status == 204:
+                    self.launcher_accounts["accounts"].pop(id)
+
+                    _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
+                    return True
+                else:
+                    return False
+            continue
 
         if password == None:
             password = getpass.getpass("Password to Logout : ")
@@ -308,21 +302,17 @@ class gally_launcher:
         }
         headers={'Content-type':'application/json'}
         resp = web.post("https://authserver.mojang.com/refresh", payload, headers=headers)
-        auth_response = json.loads(resp.read.decode())
 
-        if "accessToken" in auth_response:
-            self.access_token = auth_response["accessToken"]
-            launcher_acc = open(self.launcher_accounts_file,"r")
-            launcher_accounts_text = launcher_acc.read().replace(accessToken, self.access_token)
-            launcher_acc.close()
-
-            launcher_accounts_text = json.loads(launcher_accounts_text)
-            
-            launcher_accounts = open(self.launcher_accounts_file,'w')
-            json.dump(launcher_accounts_text, launcher_accounts)
-            launcher_accounts.close()
-            return True
+        if resp.status == 200 or resp.status == 204:
+            auth_response = json.loads(resp.read())
+            if "accessToken" in auth_response:
+                self.access_token = auth_response["accessToken"]
+                self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.access_token
+                _file.write_file(self.launcher_accounts_file, launcher_accounts_text)
+                launcher_accounts.close()
+                return True
         else:
+            print(resp.status)
             return False
 
     def validate(self, accessToken, clientToken):
@@ -330,12 +320,14 @@ class gally_launcher:
             "accessToken": accessToken,
             "clientToken": clientToken
         }
-        headers={'Content-type':'application/json'}
+        
+        headers = {'Content-type':'application/json'}
         resp = web.post("https://authserver.mojang.com/validate", payload, headers=headers)
 
         if resp.status == 204:
             return True
         else:
+            print(resp.status)
             return False
 
     def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False):
@@ -428,11 +420,12 @@ class gally_launcher:
             elif self.system == "windows":
                 command = "start \"\" \"%s\" %s" % (java, JAVA_ARGUMENT)
                 
-        logging.info("starting Minecraft.. please wait")
+
         if self.access_token:
             logging.debug(command.replace(self.access_token, "??????????"))
         else:
             logging.debug(command)
 
         if dont_start == False:
+            logging.info("starting Minecraft.. please wait")
             _file.command(command, console=console)
