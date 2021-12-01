@@ -287,5 +287,4 @@ elif type_ == "server":
         server_properties["allow-flight"] = args["allow_flight"]
     
     if version or root:
-        server.download_java()
         server.start(java=java, server_properties=server_properties, java_arguments=java_argument)

@@ -1,6 +1,7 @@
 import os
 from libraries.minecraft.version_parsing import parse_minecraft_version
 from libraries.minecraft.download_versions import search_version
+from libraries.launcher.openJava import get_java
 import libraries.utils._file as _file
 import libraries.utils.web as web
 import logging
@@ -14,7 +15,7 @@ class minecraft_server:
         self.architechture = _file.get_architechture()
         self.java_arguments = None
         self.java = "java"
-
+        self.javaVersion = None
         self.version = version
         if server_root == None:
             if _file.get_os() == "windows":
@@ -26,12 +27,18 @@ class minecraft_server:
         else:
             self.server_root = server_root
     
-    def download_java(self):
+    def download_java(self, version=None):
 
         temp_directory = None
         filename = None
         url = None
         java_directory = None
+
+        if version == None:
+            if self.javaVersion:
+                version = self.javaVersion
+            else:
+                version = 8
 
         if self.system == "linux":
             try:
@@ -42,78 +49,31 @@ class minecraft_server:
         elif self.system == "windows":
             temp_directory = os.environ["temp"]
             java_directory = "%s/gally_launcher" % (os.environ["appdata"])
-        
-        
-        if self.version == None:
-            version2 = "16"
+
+        filename = "jdk-%s_%s_%s" % (version, self.system, self.architechture)
+        jdk_directory = "%s/%s" % (java_directory, filename)
+        url = get_java(version, self.system, self.architechture)
+
+        if self.system == "windows":
+            filename = "%s.zip" % filename
         else:
-            r_version = re.search(r"1\.(?P<version2>[0-9]+)(\.(?P<version3>[0-9]+))?",self.version)
-            version2 = r_version.group("version2")
-
-        if int(version2) >= 17:
-        
-            if self.system == "linux":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_linux_hotspot_16.0.1_9.tar.gz"
-                
-                elif self.architechture == "armv7l":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_arm_linux_hotspot_16.0.1_9.tar.gz"
-                
-                elif self.architechture == "aarch64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_aarch64_linux_hotspot_16.0.1_9.tar.gz"
-                    
-                filename = "openjdk-16.tar.gz"
-                jdk_directory = "%s/jdk-16.0.1+9-jre" % java_directory
-
-            elif self.system == "windows":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_windows_hotspot_16.0.1_9.zip"
-                
-                elif self.architechture == "i386":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x86-32_windows_hotspot_16.0.1_9.zip"
-
-                filename = "openjdk-16.zip"
-                jdk_directory = "%s/jdk-16.0.1+9-jre" % java_directory
-            
-        else:
-            if self.system == "linux":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_linux_hotspot_15.0.2_7.tar.gz"
-
-                elif self.architechture == "armv7l":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_arm_linux_hotspot_15.0.2_7.tar.gz"
-
-                elif self.architechture == "aarch64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_aarch64_linux_hotspot_15.0.2_7.tar.gz"
-
-                filename = "openjdk-15.tar.gz"
-                jdk_directory = "%s/jdk-15.0.2+7-jre" % java_directory
-
-            elif self.system == "windows":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_windows_hotspot_15.0.2_7.zip"
-                
-                elif self.architechture == "i386":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x86-32_windows_hotspot_15.0.2_7.zip"
-
-                filename = "openjdk-15.zip"
-                jdk_directory = "%s/jdk-15.0.2+7-jre" % java_directory
+            filename = "%s.tar.gz" % filename
 
         if url:
-            zip_file = web.download(url, "%s/%s" % (temp_directory, filename))
+            java_archive = web.download(url, "%s/%s" % (temp_directory,filename))
         else:
-            logging.error("Operating System Unknown or Architecture Unknown")
+            logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architechture))
             exit()
         
         if os.path.isdir(jdk_directory) == False:
-            if zip_file == False:
-                print("zipfile : %s" % zip_file)
+            if java_archive == False:
+                print("java_archive : %s" % java_archive)
                 exit()
             else:
-                print(zip_file, java_directory)
-                _file.extract_archive(zip_file, java_directory)
-
-        self.java = "%s/bin/java" % jdk_directory
+                extracted_directory = _file.extract_archive(java_archive, java_directory)
+                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory )
+                
+        self.java_path = "%s/bin" % jdk_directory
         return True
 
     def verify_eula(self):
@@ -140,6 +100,7 @@ class minecraft_server:
         self.downloader = search_version(minecraft_root=".temp")
         self.downloader.download_versions(version=self.version)
         version_parser = parse_minecraft_version(minecraft_root=".temp",version=self.version)
+        self.javaVersion = version_parser.javaVersion
         jar_path = version_parser.download_server(self.server_root)
         _file.rm_rf(".temp")
         return jar_path
@@ -183,8 +144,6 @@ class minecraft_server:
             elif type(java_arguments) == list:
                 self.java_arguments = java_arguments
 
-        if java == None:
-            java = self.java
         
         if self.version:
             self.download_server()
@@ -196,6 +155,11 @@ class minecraft_server:
                 if os.path.isfile("%s/server.jar" % self.server_root) == False:
                     logging.error("can't find %s/server.jar" % (self.server_root))
                     return False
+
+        self.download_java()
+        if java == None:
+            java = "%s/%s" % (self.java_path, self.java)
+
         self.verify_eula()
 
         if server_properties:
