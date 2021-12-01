@@ -13,6 +13,18 @@ class obj:
     def __init__(self):
         pass
 
+
+header= {
+    "User-Agent": "hii",
+    "Accept": "*/*",
+    "Accept-Encoding": "identity",
+    "Connection": "Keep-Alive"
+    }
+
+opener = urllib.request.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0'), ("Accept", "*/*"), ("Accept-Encoding", "identity"), ("Connection", "Keep-Alive")]
+urllib.request.install_opener(opener)
+
 def is_connected():
     try:
         socket.create_connection(("1.1.1.1", 53))
@@ -32,9 +44,10 @@ def download(url, filename, exist_ignore=False, retry=False):
         delim = "/"
     elif "\\" in filename:
         delim = "\\"
+    
 
-    path = delim.join(filename.split(delim)[:-1])
     if delim:
+        path = delim.join(filename.split(delim)[:-1])
         if os.path.isdir(path) == False:
             _file.mkdir_recurcive(delim.join(filename.split(delim)[:-1]))
     
@@ -82,15 +95,13 @@ def get(url):
         logging.warning("[web] FAILED to request %s" % url)
         return False
 
-    return response.read().decode()
-
-def post(url, data, headers=None):
+def post(url, data, header=None):
     data = json.dumps(data).encode()
     
     req =  urllib.request.Request(url)
-    if headers:
-        for i in headers:
-            req.add_header(i, headers[i])
+    if header:
+        for i in header:
+            req.add_header(i, header[i])
 
     try:
         resp = urllib.request.urlopen(

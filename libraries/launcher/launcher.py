@@ -1,6 +1,7 @@
 import os
 import libraries.utils._file as _file
 import libraries.utils.web as web
+from libraries.launcher.openJava import get_java
 from libraries.minecraft.version_parsing import parse_minecraft_version
 from libraries.minecraft.launcher_profile import profile
 from libraries.minecraft.download_versions import search_version
@@ -74,6 +75,12 @@ class gally_launcher:
         url = None
         java_directory = None
 
+        if version == None:
+            if self.javaVersion:
+                version = self.javaVersion
+            else:
+                version = 8
+
         if self.system == "linux":
             try:
                 temp_directory = os.environ["TMPDIR"]
@@ -84,67 +91,29 @@ class gally_launcher:
             temp_directory = os.environ["temp"]
             java_directory = "%s/gally_launcher" % (os.environ["appdata"])
 
-        if self.javaVersion >= 16:
-            if self.system == "linux":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_linux_hotspot_16.0.1_9.tar.gz"
-                
-                elif self.architechture == "armv7l":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_arm_linux_hotspot_16.0.1_9.tar.gz"
-                
-                elif self.architechture == "aarch64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_aarch64_linux_hotspot_16.0.1_9.tar.gz"
-                    
-                filename = "openjdk-16.tar.gz"
-                jdk_directory = "%s/jdk-16.0.1+9-jre" % java_directory
+        filename = "jdk-%s_%s_%s" % (version, self.system, self.architechture)
+        jdk_directory = "%s/%s" % (java_directory, filename)
+        url = get_java(version, self.system, self.architechture)
 
-            elif self.system == "windows":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_windows_hotspot_16.0.1_9.zip"
-                
-                elif self.architechture == "i386":
-                    url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x86-32_windows_hotspot_16.0.1_9.zip"
-
-                filename = "openjdk-16.zip"
-                jdk_directory = "%s/jdk-16.0.1+9-jre" % java_directory
-            
+        if self.system == "windows":
+            filename = "%s.zip" % filename
         else:
-            if self.system == "linux":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_linux_hotspot_15.0.2_7.tar.gz"
-
-                elif self.architechture == "armv7l":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_arm_linux_hotspot_15.0.2_7.tar.gz"
-
-                elif self.architechture == "aarch64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_aarch64_linux_hotspot_15.0.2_7.tar.gz"
-
-                filename = "openjdk-15.tar.gz"
-                jdk_directory = "%s/jdk-15.0.2+7-jre" % java_directory
-
-            elif self.system == "windows":
-                if self.architechture == "AMD64" or self.architechture == "x86_64":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_windows_hotspot_15.0.2_7.zip"
-                
-                elif self.architechture == "i386":
-                    url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x86-32_windows_hotspot_15.0.2_7.zip"
-
-                filename = "openjdk-15.zip"
-                jdk_directory = "%s/jdk-15.0.2+7-jre" % java_directory
+            filename = "%s.tar.gz" % filename
 
         if url:
-            zip_file = web.download(url, "%s/%s" % (temp_directory, filename))
+            java_archive = web.download(url, "%s/%s" % (temp_directory,filename))
         else:
             logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architechture))
             exit()
         
         if os.path.isdir(jdk_directory) == False:
-            if zip_file == False:
-                print("zipfile : %s" % zip_file)
+            if java_archive == False:
+                print("java_archive : %s" % java_archive)
                 exit()
             else:
-                _file.extract_archive(zip_file, java_directory)
-
+                extracted_directory = _file.extract_archive(java_archive, java_directory)
+                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory )
+                
         self.java_path = "%s/bin" % jdk_directory
         return True
         

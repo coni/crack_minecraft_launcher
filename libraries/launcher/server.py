@@ -43,6 +43,7 @@ class minecraft_server:
             temp_directory = os.environ["temp"]
             java_directory = "%s/gally_launcher" % (os.environ["appdata"])
         
+        
         if self.version == None:
             version2 = "16"
         else:
@@ -52,7 +53,7 @@ class minecraft_server:
         if int(version2) >= 17:
         
             if self.system == "linux":
-                if self.architechture == "AMD64":
+                if self.architechture == "AMD64" or self.architechture == "x86_64":
                     url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_linux_hotspot_16.0.1_9.tar.gz"
                 
                 elif self.architechture == "armv7l":
@@ -65,7 +66,7 @@ class minecraft_server:
                 jdk_directory = "%s/jdk-16.0.1+9-jre" % java_directory
 
             elif self.system == "windows":
-                if self.architechture == "AMD64":
+                if self.architechture == "AMD64" or self.architechture == "x86_64":
                     url = "https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16.0.1 9/OpenJDK16U-jre_x64_windows_hotspot_16.0.1_9.zip"
                 
                 elif self.architechture == "i386":
@@ -76,7 +77,7 @@ class minecraft_server:
             
         else:
             if self.system == "linux":
-                if self.architechture == "AMD64":
+                if self.architechture == "AMD64" or self.architechture == "x86_64":
                     url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_linux_hotspot_15.0.2_7.tar.gz"
 
                 elif self.architechture == "armv7l":
@@ -89,7 +90,7 @@ class minecraft_server:
                 jdk_directory = "%s/jdk-15.0.2+7-jre" % java_directory
 
             elif self.system == "windows":
-                if self.architechture == "AMD64":
+                if self.architechture == "AMD64" or self.architechture == "x86_64":
                     url = "https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.2 7/OpenJDK15U-jre_x64_windows_hotspot_15.0.2_7.zip"
                 
                 elif self.architechture == "i386":
@@ -101,7 +102,7 @@ class minecraft_server:
         if url:
             zip_file = web.download(url, "%s/%s" % (temp_directory, filename))
         else:
-            logging.error("Operating System Unknown")
+            logging.error("Operating System Unknown or Architecture Unknown")
             exit()
         
         if os.path.isdir(jdk_directory) == False:

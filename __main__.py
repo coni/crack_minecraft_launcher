@@ -28,6 +28,7 @@ parser = MyParser()
 
 parser.add_argument("-t", "--type", help="Launcher type (client|server)")
 
+parser.add_argument("-d", "--download", help="download client")
 parser.add_argument("-v", "--version", help="Load version")
 parser.add_argument("-dont_start", "--dont_start", action="store_true", help="Dont start the game")
 parser.add_argument("-r", "--root", help="Set minecraft root")
@@ -50,7 +51,6 @@ if args["type"] == "server" or args["type"] == "s":
     type_ = "server"
 
 if type_ == "client":
-    parser.add_argument("-d", "--download", help="download client")
     parser.add_argument("-lp", "--list_profiles", action='store_true', help="list every existing profiles")
     parser.add_argument("-p", "--profile", help="load profile")
     parser.add_argument("-w", "--without_assets", action="store_true", help="can start the game much faster but without some texture")
@@ -211,7 +211,7 @@ if type_ == "client":
         launcher.login(args["email"], args["password"])
 
     if start:
-        launcher.download_java(version=launcher.version)
+        launcher.download_java()
         launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
 
 elif type_ == "server":

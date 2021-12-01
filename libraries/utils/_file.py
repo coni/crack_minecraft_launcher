@@ -87,24 +87,25 @@ def find_folder(folder_name, path="."):
     return list_folders
 
 def extract_archive(archive_name, path, to_extract=[]):
-    
     if type(to_extract) == str:
         to_extract = [to_extract]
-        
+    files = []
     if archive_name[-7:] == ".tar.gz":
         logging.debug("[file] extracting %s to %s" % (archive_name, path) )
         file = tarfile.open(archive_name)
+        for i in file.getnames():
+            files.append(i)
         file.extractall(path) 
         file.close()
-        return ls(path, type="folder") + ls(path, type="file")
+        return files
     else:
         logging.debug("[file] extracting %s to %s" % (archive_name, path) )
         with zipfile.ZipFile(archive_name, 'r') as zipObj:
-            archive_files = zipObj.namelist()
-            for i in archive_files:
+            files = zipObj.namelist()
+            for i in files:
                 if i in to_extract or to_extract == []:
                     zipObj.extract(i, path)
-            return ls(path, type="folder") + ls(path, type="file")
+            return files
 
 def mv(source, destination):
     logging.debug("[file] moving %s to %s" % (source, destination))

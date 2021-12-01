@@ -71,7 +71,7 @@ class parse_minecraft_version:
             if self.inheritsFrom:
                 self.javaVersion = self.inheritsFrom_parse.javaVersion
             else:
-                self.javaVersion = 15
+                self.javaVersion = 8
 
     def get_lastest_lwjgl_version(self):
         
@@ -319,9 +319,10 @@ class parse_minecraft_version:
             web.download(zip_url, zip_filename)
             if os.path.isfile(zip_filename):
                 list_folder_extracted = _file.extract_archive(zip_filename, "%s/%s" % (self.minecraft_root, self.binary_root))
-            
+                print(list_folder_extracted)
+                # exit()
                 for folder in list_folder_extracted:
-                    if folder == "lwjgl-%s" % self.lastest_lwjgl_version:
+                    if folder == "lwjgl-%s/" % self.lastest_lwjgl_version:
                         folder = "%s/%s" % (self.binary_root, self.lastest_lwjgl_version)
                         _file.mv("%s/%s/lwjgl-%s" % (self.minecraft_root, self.binary_root, self.lastest_lwjgl_version), "%s/%s" % (self.minecraft_root, folder))
 
