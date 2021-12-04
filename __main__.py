@@ -88,7 +88,7 @@ elif type_ == "server":
     parser.add_argument("-level_type", "--level_type", help="level_type")
 
 args = vars(parser.parse_args())
-if args["version"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
+if args["version"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
     pass
 else:
     parser.help()
@@ -119,23 +119,28 @@ if args["launcher_version"]:
     print(version)
 
 if args["update"]:
-    if type(version) == int:
-        executable_path = sys.argv[0]
-        updater_path = "%s/gally_update.exe" % (gally_path)
-        if executable_path[-4:] == ".exe":
-            last_version = int(web.get("https://github.com/coni/gally_update/releases/download/latest/version"))
-            if last_version > version:
-                if os.path.isfile("%s/update.exe" % (gally_path)) == False:
-                    web.download("https://github.com/coni/gally_update/releases/download/latest/gally_update.exe", updater_path, exist_ignore=True)
-                _file.command("start \"\" \"%s\" \"%s\"" % (updater_path, executable_path))
-            else:
-                print("already the latest version")
-        else:
-            print("can only update with executable version")
-    else:
-        print("This is an experimental build. You can't update it")
+    if getattr(sys, 'frozen', False):
+        executable_fullpath =  sys.executable
+        executable_temp = executable_fullpath + ".tmp"
+    elif __file__:
+        print("incorrect file")
+        sys.exit()
 
+    if system == "linux":
+        url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher"
+    else:
+        url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher.exe"
+
+    if web.download(url, executable_temp):
+        os.rename(executable_temp, executable_fullpath)
+        if system == "linux":
+            _file.command("chmod +x %s" % executable_fullpath)
+        logging.info("sucessfully updated")
+    else:
+        logging.info("An error occured")
     sys.exit()
+
+
 
 if args["install"]:
     logging.warning("EXPERIMENTAL FEATURE!")

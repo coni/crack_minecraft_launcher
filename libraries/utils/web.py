@@ -62,7 +62,9 @@ def download(url, filename, exist_ignore=False, retry=False):
     try:
         if is_file == False:
             logging.debug("[web] download %s from %s" % (filename, url_fixed))
-            urllib.request.urlretrieve(url_fixed, filename)
+            data = urllib.request.urlopen(url_fixed).read()
+            with open(filename,'wb') as download:
+                download.write(data)
         else:
             logging.debug("[web] %s already exist (from %s)" % (filename, url_fixed))
 
@@ -94,6 +96,7 @@ def get(url):
     except:
         logging.warning("[web] FAILED to request %s" % url)
         return False
+    return response.read()
 
 def post(url, data, header=None):
     data = json.dumps(data).encode()
