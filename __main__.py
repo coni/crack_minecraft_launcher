@@ -61,8 +61,9 @@ if type_ == "client":
     parser.add_argument("-email", "--email", help="email to login to a Mojang account")
     parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
     parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
-    parser.add_argument("-skin", "--skin", help="(only for offline player) choose skin from a player name")
-
+    parser.add_argument("-uuid_of", "--uuid_of", help="(only for offline player) choose the uuid of a player")
+    parser.add_argument("-uuid", "--uuid", help="(only for offline player) choose an uuid")
+    
 elif type_ == "server":
     parser.add_argument("-motd", "--motd", help="server displayed message (Default = A Minecraft Server")
     parser.add_argument("-pvp", "--pvp", help="friendly fire (Default = true)")
@@ -149,9 +150,7 @@ if args["update"]:
 
 
 if args["install"]:
-    logging.warning("EXPERIMENTAL FEATURE!")
-    user_response = input("Are you sure you want to continue? (y/n) : ")
-    if user_response == "y":
+    if system == "linux":
         if getattr(sys, 'frozen', False):
             executable_fullpath =  sys.executable
         elif __file__:
@@ -184,9 +183,8 @@ if args["install"]:
         else:
             logging.error("Can't find correct PATH..")
     else:
-        print("response is negative, exiting the script")
-    sys.exit()
-
+        logging.error("this feature is only for the linux users")
+        
 if args["credit"]:
     print("author : coni (github.com/coni)")
     print("made with love <3")
@@ -232,8 +230,11 @@ if type_ == "client":
     if args["without_assets"]:
         assets = False
     
-    if args["skin"]:
-        launcher.version_parser.set_skin(args["skin"])
+    if args["uuid_of"]:
+        launcher.version_parser.set_uuid(username=args["uuid_of"])
+    
+    if args["uuid"]:
+        launcher.version_parser.set_uuid(uuid=args["uuid_of"])
         
     if args["profile"]:
         start = launcher.load_profile(args["profile"])
