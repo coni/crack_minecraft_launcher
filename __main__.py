@@ -132,9 +132,15 @@ if args["update"]:
         url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher.exe"
 
     if web.download(url, executable_temp):
+        if system == "windows":
+            filename = sys.executable.split("\\")[-1]
+            if os.path.isfile(temp_directory + "/" + filename):
+                os.remove(temp_directory + "/" + filename)
+            os.rename(executable_fullpath, temp_directory + "/" + filename)
         os.rename(executable_temp, executable_fullpath)
         if system == "linux":
             _file.command("chmod +x %s" % executable_fullpath)
+            
         logging.info("sucessfully updated")
     else:
         logging.info("An error occured")
