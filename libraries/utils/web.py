@@ -98,13 +98,13 @@ def get(url):
         return False
     return response.read()
 
-def post(url, data, header=None):
+def post(url, data, headers=None):
     data = json.dumps(data).encode()
     
     req =  urllib.request.Request(url)
-    if header:
-        for i in header:
-            req.add_header(i, header[i])
+    if headers:
+        for i in headers:
+            req.add_header(i, headers[i])
 
     try:
         resp = urllib.request.urlopen(

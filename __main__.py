@@ -88,7 +88,7 @@ elif type_ == "server":
     parser.add_argument("-level_type", "--level_type", help="level_type")
 
 args = vars(parser.parse_args())
-if args["version"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
+if args["version"] or args["install"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
     pass
 else:
     parser.help()
@@ -152,12 +152,40 @@ if args["install"]:
     logging.warning("EXPERIMENTAL FEATURE!")
     user_response = input("Are you sure you want to continue? (y/n) : ")
     if user_response == "y":
-        if file_extension == "exe":
-            _file.cp(sys.argv[0], gally_path)
-        _file.set_path(gally_path)
+        if getattr(sys, 'frozen', False):
+            executable_fullpath =  sys.executable
+        elif __file__:
+            print("incorrect file")
+            sys.exit()
+        if system == "linux":
+            delim = "/"
+        else:
+            delim = "\\"
+        home_path = os.environ["HOME"]
+        accepted_paths = [home_path + "/.local/bin/", home_path + "/bin/", home_path + "/.bin/", "/usr/local/bin/", "/usr/bin/", "/usr/local/sbin/", "/bin/"]
+        bin_path = None
+        for path in accepted_paths:
+            for sys_path in os.environ["PATH"].split(":"):
+                if sys_path[-1] != delim:
+                    sys_path += delim
+                if path == sys_path:
+                    bin_path = sys_path
+                    break
+            if bin_path:
+                break
+        if bin_path:
+            try:
+                filename = _file.cp(executable_fullpath, bin_path + "gally_launcher")
+                if system == "linux":
+                    os.system("chmod +x %s" % filename)
+                logging.info("sucessfully installed gally_launcher to the path (%s)", bin_path)
+            except PermissionError:
+                logging.error("can't install gally_launcher to %s, retry with 'sudo'" % bin_path)
+        else:
+            logging.error("Can't find correct PATH..")
     else:
         print("response is negative, exiting the script")
-        sys.exit()
+    sys.exit()
 
 if args["credit"]:
     print("author : coni (github.com/coni)")

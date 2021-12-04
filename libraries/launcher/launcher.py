@@ -281,8 +281,7 @@ class gally_launcher:
             if "accessToken" in auth_response:
                 self.access_token = auth_response["accessToken"]
                 self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.access_token
-                _file.write_file(self.launcher_accounts_file, launcher_accounts_text)
-                launcher_accounts.close()
+                _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
                 return True
         else:
             return False

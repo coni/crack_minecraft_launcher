@@ -121,7 +121,8 @@ def cp(source, destination):
     else:
         filename = source
     
-    shutil.copyfile(source, "C:\\Users\\coni\\AppData\\Roaming\\gally_launcher\\%s" % (filename))
+    shutil.copyfile(source, destination)
+    return destination
 
 def ls(folder, type="file"):
     list_files = []
