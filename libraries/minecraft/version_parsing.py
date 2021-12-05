@@ -73,6 +73,26 @@ class parse_minecraft_version:
                 self.javaVersion = self.inheritsFrom_parse.javaVersion
             else:
                 self.javaVersion = 8
+    
+    def get_java_version(self):
+        if "javaVersion" in self.json_loaded:
+            javaVersion = self.json_loaded["javaVersion"]["majorVersion"]
+        else:
+            if self.inheritsFrom:
+                javaVersion = self.inheritsFrom_parse.get_java_version()
+            else:
+                javaVersion = 8
+        return javaVersion
+
+    def get_java_component(self):
+        if "javaVersion" in self.json_loaded:
+            javaVersion = self.json_loaded["javaVersion"]["component"]
+        else:
+            if self.inheritsFrom:
+                javaVersion = self.inheritsFrom_parse.get_java_component()
+            else:
+                javaVersion = "jre-legacy"
+        return javaVersion
 
     def get_lastest_lwjgl_version(self):
         
@@ -481,7 +501,7 @@ class parse_minecraft_version:
         arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = access_token
         arguments_var["${user_type}"] = "mojang"
         arguments_var["${version_type}"] = self.version_type
-        arguments_var["${user_properties}"] = "."
+        arguments_var["${user_properties}"] = "{}"
 
         json_arguments = []
         if "minecraftArguments" in self.json_loaded:

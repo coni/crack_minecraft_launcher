@@ -6,6 +6,7 @@ from libraries.launcher.launcher import gally_launcher
 from libraries.launcher.server import minecraft_server
 import libraries.utils.web as web
 import libraries.utils._file as _file
+import json
 
 class MyParser(argparse.ArgumentParser):
     def help(self):
@@ -40,9 +41,10 @@ parser.add_argument("-debug", "--debug", action="store_true", help="Show everyth
 parser.add_argument("-console", "--console", action="store_true", help="Java console when starting Minecraft client")
 parser.add_argument("-update", "--update", action="store_true", help="Update the launcher")
 parser.add_argument("-q", "--quiet", action="store_true", help="Don't show any messages")
-parser.add_argument("-launcher_version", "--launcher_version", action="store_true", help="Show launcher version")
 parser.add_argument("-install", "--install", action="store_true", help="EXPERIMENTAL: Add the game to path")
 parser.add_argument("-c", "--credit", action="store_true", help="Credit")
+
+parser.add_argument("-test", "--test", action="store_true", help="test")
 
 args, unknown = parser.parse_known_args()
 args = vars(args)
@@ -89,13 +91,11 @@ elif type_ == "server":
     parser.add_argument("-level_type", "--level_type", help="level_type")
 
 args = vars(parser.parse_args())
-if args["version"] or args["install"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
+if args["version"] or args["test"] or args["install"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
     pass
 else:
     parser.help()
 
-if sys.argv[0].split(".")[-1] == "exe":
-    file_extension = "exe"
 
 if args["quiet"]:
     logging.basicConfig(level=logging.WARNING)
@@ -115,9 +115,6 @@ if system == "linux":
 elif system == "windows":
     temp_directory = os.environ["temp"]
     gally_path = "%s/gally_launcher" % (os.environ["appdata"])
-
-if args["launcher_version"]:
-    print(version)
 
 if args["update"]:
     if getattr(sys, 'frozen', False):
@@ -147,6 +144,16 @@ if args["update"]:
         logging.info("An error occured")
     sys.exit()
 
+if args["test"]:
+    import libraries.minecraft.java as hihi
+    java_manifest_url = hihi.get_manifest("linux","jre-legacy")
+
+    java_manifest_path = "/tmp/java_manifest.json"
+    java_manifest = None
+    if web.download(java_manifest_url, java_manifest_path):
+        with open(java_manifest_path, "r") as temp:
+            java_manifest = json.load(temp)
+        hihi.download_java(java_manifest, "./java/")
 
 
 if args["install"]:
@@ -251,7 +258,6 @@ if type_ == "client":
         launcher.login(args["email"], args["password"])
 
     if start:
-        launcher.download_java()
         launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
 
 elif type_ == "server":

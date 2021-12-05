@@ -49,7 +49,7 @@ def download(url, filename, exist_ignore=False, retry=False):
     if delim:
         path = delim.join(filename.split(delim)[:-1])
         if os.path.isdir(path) == False:
-            _file.mkdir_recurcive(delim.join(filename.split(delim)[:-1]))
+            _file.mkdir_recurcive(path)
     
     url_fixed = urllib.parse.quote(url).replace("%3A",":")
 
@@ -73,11 +73,7 @@ def download(url, filename, exist_ignore=False, retry=False):
         sys.exit()
     except:
         logging.debug("[web] can't download %s from %s" % (filename, url_fixed))
-        if retry == False:
-            return download(url, filename, retry=True)
-        else:
-            return False
-
+        
 def get_uuid(username=None):
     if username != None:
         req = get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
