@@ -20,7 +20,7 @@ class gally_launcher:
     def __init__(self, minecraft_root=None):
         
         self.system = _file.get_os()
-        self.architechture = _file.get_architechture()
+        self.architecture = _file.get_architechture()
         if minecraft_root == None:
             if self.system == "windows":
                 minecraft_root = "%s/.minecraft" % (os.environ["appdata"])
@@ -55,8 +55,6 @@ class gally_launcher:
         self.profile = profile(minecraft_root=self.minecraft_root)
         self.downloader = search_version(minecraft_root=self.minecraft_root)
 
-
-
     def load_version(self, argument):
         if self.downloader.exist(argument):
             self.downloader.download_versions(argument)
@@ -68,7 +66,29 @@ class gally_launcher:
             print("the version does not exist")
             return False
     
-    def download_java(self, version=None):
+    def download_java(self, platform, component, path):
+        if self.system == "linux":
+            try:
+                temp_directory = os.environ["TMPDIR"]
+            except:
+                temp_directory = "/tmp"
+        elif self.system == "windows":
+            temp_directory = os.environ["temp"]
+
+        import libraries.minecraft.java as jre_downloader
+        java_manifest_url = jre_downloader.get_manifest(platform,component)
+
+        java_manifest_path = "%s/java_manifest.json" % temp_directory
+        java_manifest = None
+        if web.download(java_manifest_url, java_manifest_path):
+            with open(java_manifest_path, "r") as temp:
+                java_manifest = json.load(temp)
+            jre_downloader.download_java(java_manifest, path)
+
+        self.java_path = "%s/bin/" % path
+        return True
+
+    def download_openjdk(self, version=None):
 
         temp_directory = None
         filename = None
@@ -81,19 +101,9 @@ class gally_launcher:
             else:
                 version = 8
 
-        if self.system == "linux":
-            try:
-                temp_directory = os.environ["TMPDIR"]
-            except:
-                temp_directory = "/tmp"
-            java_directory = "%s/.gally_launcher" % (os.environ["HOME"])
-        elif self.system == "windows":
-            temp_directory = os.environ["temp"]
-            java_directory = "%s/gally_launcher" % (os.environ["appdata"])
-
-        filename = "jdk-%s_%s_%s" % (version, self.system, self.architechture)
+        filename = "jdk-%s_%s_%s" % (version, self.system, self.architecture)
         jdk_directory = "%s/%s" % (java_directory, filename)
-        url = get_java(version, self.system, self.architechture)
+        url = get_java(version, self.system, self.architecture)
 
         if self.system == "windows":
             filename = "%s.zip" % filename
@@ -103,7 +113,7 @@ class gally_launcher:
         if url:
             java_archive = web.download(url, "%s/%s" % (temp_directory,filename))
         else:
-            logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architechture))
+            logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architecture))
             exit()
         
         if os.path.isdir(jdk_directory) == False:
@@ -112,11 +122,10 @@ class gally_launcher:
                 exit()
             else:
                 extracted_directory = _file.extract_archive(java_archive, java_directory)
-                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory )
+                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory)
                 
         self.java_path = "%s/bin" % jdk_directory
         return True
-        
 
     def load_profile(self, argument):
         profile_name = None
@@ -204,8 +213,6 @@ class gally_launcher:
                 "remoteId":auth_response["clientToken"]
             }
 
-
-
             self.launcher_accounts["accounts"][self.localid] = accounts_information
             _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
 
@@ -281,8 +288,7 @@ class gally_launcher:
             if "accessToken" in auth_response:
                 self.access_token = auth_response["accessToken"]
                 self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.access_token
-                _file.write_file(self.launcher_accounts_file, launcher_accounts_text)
-                launcher_accounts.close()
+                _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
                 return True
         else:
             return False
@@ -304,17 +310,29 @@ class gally_launcher:
     def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False):
         if game_directory == None:
             game_directory = self.profile_gamedir
+    
+        logging.info("downloading java")
+        platform = None
+        if self.architecture == "i386" or self.architecture == "x86" or self.architecture == "x64":
+            platform = "%s-%s" % (self.system, self.architecture)
+        else:
+            platform = self.system
+        
+        component = self.version_parser.get_java_component()
+        java_path = "%s/runtime/%s/%s/%s/" % (self.minecraft_root, component, platform, component)
+        java_manifest = self.download_java(platform, component, java_path)
 
-        logging.info("checking client")
+        logging.info("downloading client")
         self.version_parser.download_client()
-        logging.info("checking library")
+
+        logging.info("downloading library")
         self.version_parser.download_libraries()
 
         if assets == True:
-            logging.info("checking assets")
+            logging.info("downloading assets")
             self.version_parser.download_assets()
             
-        logging.info("checking binary")
+        logging.info("downloading binary")
         self.version_parser.download_binary()
 
         if java == None:

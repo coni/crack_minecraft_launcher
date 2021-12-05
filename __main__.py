@@ -6,6 +6,7 @@ from libraries.launcher.launcher import gally_launcher
 from libraries.launcher.server import minecraft_server
 import libraries.utils.web as web
 import libraries.utils._file as _file
+import json
 
 class MyParser(argparse.ArgumentParser):
     def help(self):
@@ -40,9 +41,10 @@ parser.add_argument("-debug", "--debug", action="store_true", help="Show everyth
 parser.add_argument("-console", "--console", action="store_true", help="Java console when starting Minecraft client")
 parser.add_argument("-update", "--update", action="store_true", help="Update the launcher")
 parser.add_argument("-q", "--quiet", action="store_true", help="Don't show any messages")
-parser.add_argument("-launcher_version", "--launcher_version", action="store_true", help="Show launcher version")
 parser.add_argument("-install", "--install", action="store_true", help="EXPERIMENTAL: Add the game to path")
 parser.add_argument("-c", "--credit", action="store_true", help="Credit")
+
+parser.add_argument("-test", "--test", action="store_true", help="test")
 
 args, unknown = parser.parse_known_args()
 args = vars(args)
@@ -61,8 +63,9 @@ if type_ == "client":
     parser.add_argument("-email", "--email", help="email to login to a Mojang account")
     parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
     parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
-    parser.add_argument("-skin", "--skin", help="(only for offline player) choose skin from a player name")
-
+    parser.add_argument("-uuid_of", "--uuid_of", help="(only for offline player) choose the uuid of a player")
+    parser.add_argument("-uuid", "--uuid", help="(only for offline player) choose an uuid")
+    
 elif type_ == "server":
     parser.add_argument("-motd", "--motd", help="server displayed message (Default = A Minecraft Server")
     parser.add_argument("-pvp", "--pvp", help="friendly fire (Default = true)")
@@ -88,13 +91,11 @@ elif type_ == "server":
     parser.add_argument("-level_type", "--level_type", help="level_type")
 
 args = vars(parser.parse_args())
-if args["version"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
+if args["version"] or args["test"] or args["install"] or args["update"] or args["list_versions"] or args["type"] == "server" and args["root"] or args["download"] or args["logout"] or args["login"] or args["email"]:
     pass
 else:
     parser.help()
 
-if sys.argv[0].split(".")[-1] == "exe":
-    file_extension = "exe"
 
 if args["quiet"]:
     logging.basicConfig(level=logging.WARNING)
@@ -115,39 +116,82 @@ elif system == "windows":
     temp_directory = os.environ["temp"]
     gally_path = "%s/gally_launcher" % (os.environ["appdata"])
 
-if args["launcher_version"]:
-    print(version)
-
 if args["update"]:
-    if type(version) == int:
-        executable_path = sys.argv[0]
-        updater_path = "%s/gally_update.exe" % (gally_path)
-        if executable_path[-4:] == ".exe":
-            last_version = int(web.get("https://github.com/coni/gally_update/releases/download/latest/version"))
-            if last_version > version:
-                if os.path.isfile("%s/update.exe" % (gally_path)) == False:
-                    web.download("https://github.com/coni/gally_update/releases/download/latest/gally_update.exe", updater_path, exist_ignore=True)
-                _file.command("start \"\" \"%s\" \"%s\"" % (updater_path, executable_path))
-            else:
-                print("already the latest version")
-        else:
-            print("can only update with executable version")
-    else:
-        print("This is an experimental build. You can't update it")
-
-    sys.exit()
-
-if args["install"]:
-    logging.warning("EXPERIMENTAL FEATURE!")
-    user_response = input("Are you sure you want to continue? (y/n) : ")
-    if user_response == "y":
-        if file_extension == "exe":
-            _file.cp(sys.argv[0], gally_path)
-        _file.set_path(gally_path)
-    else:
-        print("response is negative, exiting the script")
+    if getattr(sys, 'frozen', False):
+        executable_fullpath =  sys.executable
+        executable_temp = executable_fullpath + ".tmp"
+    elif __file__:
+        print("incorrect file")
         sys.exit()
 
+    if system == "linux":
+        url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher"
+    else:
+        url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher.exe"
+
+    if web.download(url, executable_temp):
+        if system == "windows":
+            filename = sys.executable.split("\\")[-1]
+            if os.path.isfile(temp_directory + "/" + filename):
+                os.remove(temp_directory + "/" + filename)
+            os.rename(executable_fullpath, temp_directory + "/" + filename)
+        os.rename(executable_temp, executable_fullpath)
+        if system == "linux":
+            _file.command("chmod +x %s" % executable_fullpath)
+            
+        logging.info("sucessfully updated")
+    else:
+        logging.info("An error occured")
+    sys.exit()
+
+if args["test"]:
+    import libraries.minecraft.java as hihi
+    java_manifest_url = hihi.get_manifest("linux","jre-legacy")
+
+    java_manifest_path = "/tmp/java_manifest.json"
+    java_manifest = None
+    if web.download(java_manifest_url, java_manifest_path):
+        with open(java_manifest_path, "r") as temp:
+            java_manifest = json.load(temp)
+        hihi.download_java(java_manifest, "./java/")
+
+
+if args["install"]:
+    if system == "linux":
+        if getattr(sys, 'frozen', False):
+            executable_fullpath =  sys.executable
+        elif __file__:
+            print("incorrect file")
+            sys.exit()
+        if system == "linux":
+            delim = "/"
+        else:
+            delim = "\\"
+        home_path = os.environ["HOME"]
+        accepted_paths = [home_path + "/.local/bin/", home_path + "/bin/", home_path + "/.bin/", "/usr/local/bin/", "/usr/bin/", "/usr/local/sbin/", "/bin/"]
+        bin_path = None
+        for path in accepted_paths:
+            for sys_path in os.environ["PATH"].split(":"):
+                if sys_path[-1] != delim:
+                    sys_path += delim
+                if path == sys_path:
+                    bin_path = sys_path
+                    break
+            if bin_path:
+                break
+        if bin_path:
+            try:
+                filename = _file.cp(executable_fullpath, bin_path + "gally_launcher")
+                if system == "linux":
+                    os.system("chmod +x %s" % filename)
+                logging.info("sucessfully installed gally_launcher to the path (%s)", bin_path)
+            except PermissionError:
+                logging.error("can't install gally_launcher to %s, retry with 'sudo'" % bin_path)
+        else:
+            logging.error("Can't find correct PATH..")
+    else:
+        logging.error("this feature is only for the linux users")
+        
 if args["credit"]:
     print("author : coni (github.com/coni)")
     print("made with love <3")
@@ -193,8 +237,11 @@ if type_ == "client":
     if args["without_assets"]:
         assets = False
     
-    if args["skin"]:
-        launcher.version_parser.set_skin(args["skin"])
+    if args["uuid_of"]:
+        launcher.version_parser.set_uuid(username=args["uuid_of"])
+    
+    if args["uuid"]:
+        launcher.version_parser.set_uuid(uuid=args["uuid_of"])
         
     if args["profile"]:
         start = launcher.load_profile(args["profile"])
@@ -211,7 +258,6 @@ if type_ == "client":
         launcher.login(args["email"], args["password"])
 
     if start:
-        launcher.download_java()
         launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
 
 elif type_ == "server":

@@ -25,7 +25,8 @@ class parse_minecraft_version:
         self.versions_root = versions_root
         self.libraries_root = libraries_root
         self.binary_root = binary_root
-        self.skin = None
+        self.uuid_of = None
+        self.uuid = None
         
         self.inherit = inherit
         self.version = version
@@ -72,6 +73,26 @@ class parse_minecraft_version:
                 self.javaVersion = self.inheritsFrom_parse.javaVersion
             else:
                 self.javaVersion = 8
+    
+    def get_java_version(self):
+        if "javaVersion" in self.json_loaded:
+            javaVersion = self.json_loaded["javaVersion"]["majorVersion"]
+        else:
+            if self.inheritsFrom:
+                javaVersion = self.inheritsFrom_parse.get_java_version()
+            else:
+                javaVersion = 8
+        return javaVersion
+
+    def get_java_component(self):
+        if "javaVersion" in self.json_loaded:
+            javaVersion = self.json_loaded["javaVersion"]["component"]
+        else:
+            if self.inheritsFrom:
+                javaVersion = self.inheritsFrom_parse.get_java_component()
+            else:
+                javaVersion = "jre-legacy"
+        return javaVersion
 
     def get_lastest_lwjgl_version(self):
         
@@ -93,8 +114,11 @@ class parse_minecraft_version:
             logging.debug("getting the lastest version of lwjgl : %s " % lastest_inherits)
             return lastest_inherits
 
-    def set_skin(self, username):
-        self.skin = username
+    def set_uuid(self, username=None, uuid=None):
+        if username:
+            self.uuid_of = username
+        else:
+            self.uuid = uuid
 
     def download_server(self, path="."):
         exist = False
@@ -456,10 +480,14 @@ class parse_minecraft_version:
         if self.inheritsFrom:
             inherits_arguments = self.inheritsFrom_parse.get_minecraft_arguments()
         
-        if self.skin:
-            username = self.skin
+        if self.uuid:
+            uuid = self.uuid
         else:
-            username = self.username
+            if self.uuid_of:
+                username = self.uuid_of
+            else:
+                username = self.username
+            uuid = web.get_uuid(username=username)
 
         minecraft_arguments = []
 
@@ -469,7 +497,7 @@ class parse_minecraft_version:
         arguments_var["${game_directory}"] = "\"%s\"" % game_directory
         arguments_var["${assets_root}"] = arguments_var["${game_assets}"] = self.assets_root
         arguments_var["${assets_index_name}"] = self.assetIndex
-        arguments_var["${auth_uuid}"] = web.get_uuid(username=username)
+        arguments_var["${auth_uuid}"] = uuid
         arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = access_token
         arguments_var["${user_type}"] = "mojang"
         arguments_var["${version_type}"] = self.version_type
