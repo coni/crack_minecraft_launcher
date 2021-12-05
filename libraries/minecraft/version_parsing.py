@@ -501,7 +501,7 @@ class parse_minecraft_version:
         arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = access_token
         arguments_var["${user_type}"] = "mojang"
         arguments_var["${version_type}"] = self.version_type
-        arguments_var["${user_properties}"] = "."
+        arguments_var["${user_properties}"] = "{}"
 
         json_arguments = []
         if "minecraftArguments" in self.json_loaded:
