@@ -388,7 +388,7 @@ class parse_minecraft_version:
                 manifest_mainclass = string.find_string(manifest_text, "Main-Class")
                 if manifest_mainclass:
                     manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
-                _file.rm_rf("./temp")
+                _file.rm_rf(".temp")
         except:
             pass
     
