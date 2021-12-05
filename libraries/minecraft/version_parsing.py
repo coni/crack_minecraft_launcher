@@ -367,12 +367,14 @@ class parse_minecraft_version:
             else:
                 version = self.version
 
-            version_major = int(version.split(".")[1])
+            # hihi
+            reggex = re.search(r"1\.(?P<majorVersion>[0-9]*)(\.(?P<minorVersion>[0-9]*))?",version)
+            version_major = int(reggex.group("majorVersion"))
             if len(version.split(".")) > 2:
-                version_minor = int(version.split(".")[2])
+                version_minor = int(reggex.group("minorVersion"))
             else:
                 version_minor = 0
-        
+
         if self.inheritsFrom:
             mainclass_inherits = self.inheritsFrom_parse.get_mainclass()
         
@@ -386,9 +388,10 @@ class parse_minecraft_version:
                 manifest_mainclass = string.find_string(manifest_text, "Main-Class")
                 if manifest_mainclass:
                     manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]
+                _file.rm_rf("./temp")
         except:
             pass
-
+    
         if "mainClass" in self.json_loaded:
             if self.get_versionType() != "snapshot":
                 if version_major <= 2 and version_minor < 5:
