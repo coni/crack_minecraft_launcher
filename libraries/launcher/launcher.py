@@ -307,7 +307,7 @@ class gally_launcher:
         else:
             return False
 
-    def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False):
+    def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False, ip=None, port = None):
         if game_directory == None:
             game_directory = self.profile_gamedir
     
@@ -364,6 +364,10 @@ class gally_launcher:
         else:
             game_argument = self.version_parser.get_minecraft_arguments(access_token=self.access_token, game_directory=game_directory)
 
+        if ip and port:
+            game_argument.append("--server %s" % ip)
+            game_argument.append("--port %s" % port)
+        
         default_arguments = []
 
         if java_argument:

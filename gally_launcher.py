@@ -29,22 +29,28 @@ parser = MyParser()
 
 parser.add_argument("-t", "--type", help="Launcher type (client|server)")
 
+parser.add_argument("-password", "--password", help="password to login to a Mojang account")
+parser.add_argument("-email", "--email", help="email to login to a Mojang account")
+parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
+parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
+
 parser.add_argument("-d", "--download", help="download client")
 parser.add_argument("-v", "--version", help="Load version")
-parser.add_argument("-dont_start", "--dont_start", action="store_true", help="Dont start the game")
+parser.add_argument("-ds", "--dont_start", action="store_true", help="Dont start the game")
 parser.add_argument("-r", "--root", help="Set minecraft root")
 parser.add_argument("-j", "--java_runtime", help="Specify your java binary path")
 parser.add_argument("-ja", '--java_argument')
 parser.add_argument("-lv", "--list_versions", help="List Minecraft versions (release|downloaded|snapshot)")
-parser.add_argument("-debug", "--debug", action="store_true", help="Show everything")
+parser.add_argument("-db", "--debug", action="store_true", help="Show everything")
 
-parser.add_argument("-console", "--console", action="store_true", help="Java console when starting Minecraft client")
-parser.add_argument("-update", "--update", action="store_true", help="Update the launcher")
+parser.add_argument("-c", "--console", action="store_true", help="Java console when starting Minecraft client")
+parser.add_argument("-up", "--update", action="store_true", help="Update the launcher")
 parser.add_argument("-q", "--quiet", action="store_true", help="Don't show any messages")
-parser.add_argument("-install", "--install", action="store_true", help="EXPERIMENTAL: Add the game to path")
-parser.add_argument("-c", "--credit", action="store_true", help="Credit")
+parser.add_argument("-i", "--install", action="store_true", help="EXPERIMENTAL: Add the game to path")
+parser.add_argument("-credit", "--credit", action="store_true", help="Credit")
 
 parser.add_argument("-test", "--test", action="store_true", help="test")
+parser.add_argument("-sp", "--server_port", help="Server Port (default = 25565)")
 
 args, unknown = parser.parse_known_args()
 args = vars(args)
@@ -59,10 +65,8 @@ if type_ == "client":
     parser.add_argument("-u", "--username", help="set username")
     parser.add_argument("-g", '--gameDirectory')
 
-    parser.add_argument("-password", "--password", help="password to login to a Mojang account")
-    parser.add_argument("-email", "--email", help="email to login to a Mojang account")
-    parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
-    parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
+    parser.add_argument("-s", '--server', help="auto connect to the specified server")
+
     parser.add_argument("-uuid_of", "--uuid_of", help="(only for offline player) choose the uuid of a player")
     parser.add_argument("-uuid", "--uuid", help="(only for offline player) choose an uuid")
     
@@ -70,7 +74,6 @@ elif type_ == "server":
     parser.add_argument("-motd", "--motd", help="server displayed message (Default = A Minecraft Server")
     parser.add_argument("-pvp", "--pvp", help="friendly fire (Default = true)")
     parser.add_argument("-difficulty", "--difficulty", help="Difficulty (default = easy)")
-    parser.add_argument("-server_port", "--server_port", help="Server Port (default = 25565)")
 
     parser.add_argument("-gamemode", "--gamemode", help="player mode (default = survival)")
     parser.add_argument("-view_distance", "--view_distance", help="max distance entities spawn (default = 10)")
@@ -258,7 +261,16 @@ if type_ == "client":
         launcher.login(args["email"], args["password"])
 
     if start:
-        launcher.start(dont_start=args["dont_start"], debug=debug, assets=assets, java=java, console=args["console"], java_argument=args["java_argument"], game_directory=game_directory)
+        launcher.start(
+        game_directory=game_directory,
+        debug=debug,
+        assets=assets,
+        java=java,
+        console=args["console"],
+        java_argument=args["java_argument"],
+        ip=args["server"],
+        port=args["server_port"],
+        dont_start=args["dont_start"])
 
 elif type_ == "server":
     version = args["version"]
