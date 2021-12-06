@@ -3,7 +3,17 @@ import libraries.utils._file as _file
 import os
 import json
 
-temp_directory = "/tmp"
+
+if self.system == "linux":
+    try:
+        temp_directory = os.environ["TMPDIR"]
+    except:
+        temp_directory = "/tmp"
+    delim = "/"
+elif self.system == "windows":
+    temp_directory = os.environ["temp"]
+    delim = "\\"
+
 java_manifest = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json"
 
 def get_manifest(platform, component):
@@ -18,7 +28,7 @@ def get_manifest(platform, component):
 
 def download_java(manifest, path):
     for item in manifest["files"]:
-        item_path = path + "/" + item
+        item_path = path + delim + item
         if manifest["files"][item]["type"] == "directory":
             if os.path.isdir(item_path) == False:
                 _file.mkdir_recurcive(item_path)
