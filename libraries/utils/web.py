@@ -9,6 +9,7 @@ import json
 import re
 import socket
 
+
 class obj:
     def __init__(self):
         pass
@@ -20,6 +21,7 @@ header= {
     "Accept-Encoding": "identity",
     "Connection": "Keep-Alive"
     }
+
 
 opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0'), ("Accept", "*/*"), ("Accept-Encoding", "identity"), ("Connection", "Keep-Alive")]
@@ -33,56 +35,77 @@ def is_connected():
         pass
     return False
 
-def download(url, filename, exist_ignore=False, retry=False):
+def download(url="", filename="", multiple_files=[], total_size=0, string="", exist_ignore=False):
+
+    system = _file.get_os()
+    if system == "linux":
+        delim = "/"
+        try:
+            temp_directory = os.environ["TMPDIR"]
+        except:
+            temp_directory = "/tmp/gally_launcher"
+    elif system == "windows":
+        delim = "\\"
+        temp_directory = os.environ["temp"] + "/gally_launcher"
+
     if exist_ignore:
         is_file = False
     else:
         is_file = os.path.isfile(filename)
-
-    delim = None
-    if "/" in filename:
-        delim = "/"
-    elif "\\" in filename:
-        delim = "\\"
     
-
     if delim:
         path = delim.join(filename.split(delim)[:-1])
-        if os.path.isdir(path) == False:
-            _file.mkdir_recurcive(path)
+        if path:
+            if os.path.isdir(path) == False:
+                _file.mkdir_recurcive(path)
     
-    url_fixed = urllib.parse.quote(url).replace("%3A",":")
+    if url and filename:
+        multiple_files.append((url, filename, total_size))
 
-    if retry:
-        if "%20" in url_fixed:
-            url_fixed = url_fixed.replace("%20","%2B")
+    all_size = 0
+    block_sz = 8192
+    for url, path, size in  multiple_files:
+        filename = path.split(delim)[-1]
+        temp_filename = "%s/%s" % (temp_directory, filename)
+
+        if os.path.isfile(path) == False:
+            
+            directory = delim.join(path.split(delim)[:-1])
+            temp_directory = delim.join(temp_filename.split(delim)[:-1])
+            if directory:
+                if os.path.isdir(directory) == False:
+                    _file.mkdir_recurcive(directory)
+                    _file.mkdir_recurcive(temp_directory)
+            
+            try:
+                u = urllib.request.urlopen(url)
+                f = open(temp_filename, 'wb')
+
+                while True:
+                    buffer = u.read(block_sz)
+                    if not buffer:
+                        break
+
+                    all_size += len(buffer)
+                    f.write(buffer)
+                    if string:
+                        status = r"%s [%i%%]" % (string, all_size * 100. / total_size)
+                        status = status + chr(8)*(len(status)+1)
+                        sys.stdout.flush()
+                        sys.stdout.write(status)
+                f.close()
+                _file.mv(temp_filename, path)
+
+            except KeyboardInterrupt:
+                sys.exit()
+            except:
+                logging.debug("[web] can't download %s from %s" % (filename, url))
         else:
-            url_fixed = url_fixed.replace("%2B","%20")
-
-    try:
-        if is_file == False:
-            logging.debug("[web] download %s from %s" % (filename, url_fixed))
-            data = urllib.request.urlopen(url_fixed).read()
-            with open(filename,'wb') as download:
-                download.write(data)
-        else:
-            logging.debug("[web] %s already exist (from %s)" % (filename, url_fixed))
-
-        return filename
-    except KeyboardInterrupt:
-        sys.exit()
-    except:
-        logging.debug("[web] can't download %s from %s" % (filename, url_fixed))
+            all_size += size
         
-def get_uuid(username=None):
-    if username != None:
-        req = get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
-        if req:
-            return json.loads(req)["id"]
-
-    uuid_ = str(uuid.uuid1()).replace("-","")
-    logging.debug("[web] generate uuid : %s" % uuid_)
-    return uuid_
+        if all_size == total_size and string:
+            sys.stdout.write("\n")
+    return True
 
 def get(url):
     try:

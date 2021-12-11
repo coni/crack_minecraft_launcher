@@ -5,32 +5,49 @@ from libraries.launcher.openJava import get_java
 from libraries.minecraft.version_parsing import parse_minecraft_version
 from libraries.minecraft.launcher_profile import profile
 from libraries.minecraft.download_versions import search_version
+from libraries.minecraft.download_libraries import download_libraries
+from libraries.minecraft.download_client import download_client
+from libraries.minecraft.download_assets import download_assets
+from libraries.minecraft.download_lwjgl import download_binary
 import logging
 import json
 import sys
 import getpass
 import re
 
+system = _file.get_os()
+if system == "linux":
+    try:
+        temp_directory = os.environ["TMPDIR"]
+    except:
+        temp_directory = "/tmp/gally_launcher"
+elif system == "windows":
+    temp_directory = os.environ["temp"] + "/gally_launcher"
+_file.mkdir_recurcive(temp_directory)
+
 class obj:
     def __init__(self):
         pass
 
 class gally_launcher:
-
     def __init__(self, minecraft_root=None):
         
-        self.system = _file.get_os()
+        self.system = system
         self.architecture = _file.get_architechture()
         if minecraft_root == None:
             if self.system == "windows":
                 minecraft_root = "%s/.minecraft" % (os.environ["appdata"])
+                self.classpath_separator = ";"
             elif self.system == "linux":
                 minecraft_root = "%s/.minecraft" % (os.environ["HOME"])
+                self.classpath_separator = ":"
         
         self.minecraft_root = minecraft_root
-        versions_root = "versions"
-        assets_root = "assets"
-        libraries_root = "libraries"
+        self.versions_root = "%s/versions" % self.minecraft_root
+        self.assets_root = "%s/assets" % self.minecraft_root
+        self.libraries_root = "%s/libraries" % self.minecraft_root
+        self.binary_root = "%s/bin" % self.minecraft_root
+
         self.launcher_accounts_file = "%s/launcher_accounts.json" % (minecraft_root)
         if os.path.isfile(self.launcher_accounts_file):
             with open(self.launcher_accounts_file, "r") as json_file:
@@ -41,17 +58,19 @@ class gally_launcher:
         if "accounts" not in self.launcher_accounts:
             self.launcher_accounts["accounts"] = {}
         
+        self.uuid = None
         self.version = None
+        self.username = "steve"
         self.opt_java_arg = None
         self.profile_gamedir = None
         self.profile_id = None
-        self.access_token = None
+        self.access_token = "None"
         self.localid = None
 
         if os.path.isdir(self.minecraft_root) == False:
             _file.mkdir_recurcive(self.minecraft_root)
         
-        self.version_parser = parse_minecraft_version(minecraft_root=self.minecraft_root, assets_root=assets_root, versions_root=versions_root, libraries_root=libraries_root)
+        self.version_parser = parse_minecraft_version(system=self.system, minecraft_root=self.minecraft_root, versions_root=self.versions_root)
         self.profile = profile(minecraft_root=self.minecraft_root)
         self.downloader = search_version(minecraft_root=self.minecraft_root)
 
@@ -66,14 +85,14 @@ class gally_launcher:
             print("the version does not exist")
             return False
     
+    def get_jar(self):
+        default_jar = "%s/%s/%s.jar" % (self.libraries_root, self.version, self.version)
+        if os.path.isfile(default_jar):
+            return "%s.jar" % self.version
+        else:
+            return None
+
     def download_java(self, platform, component, path):
-        if self.system == "linux":
-            try:
-                temp_directory = os.environ["TMPDIR"]
-            except:
-                temp_directory = "/tmp"
-        elif self.system == "windows":
-            temp_directory = os.environ["temp"]
 
         import libraries.minecraft.java as jre_downloader
         java_manifest_url = jre_downloader.get_manifest(platform,component)
@@ -85,12 +104,20 @@ class gally_launcher:
                 java_manifest = json.load(temp)
             jre_downloader.download_java(java_manifest, path)
 
-        self.java_path = "%s/bin/" % path
-        return True
+        return "%s/bin" % path
+
+    def get_uuid(self, username=None):
+        if username != None:
+            req = web.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
+            if req:
+                return json.loads(req)["id"]
+
+        uuid_ = str(uuid.uuid1()).replace("-","")
+        logging.debug("[web] generate uuid : %s" % uuid_)
+        return uuid_
 
     def download_openjdk(self, version=None):
 
-        temp_directory = None
         filename = None
         url = None
         java_directory = None
@@ -180,8 +207,9 @@ class gally_launcher:
                 java_arg = profiles[i][profile_id]["javaArgs"]
             print("\nname=%s\nprofile_id=%s\nversion=%s\njava_arg=%s\n" % (profile_name, profile_id, profile_version, java_arg))
     
-    def set_username(self, argument):
-        self.version_parser.set_username(argument)
+    def set_username(self, username):
+        logging.debug("setting username : %s" % username)
+        self.username = username
 
     def authenticate(self, email, password):
         payload = {
@@ -307,10 +335,84 @@ class gally_launcher:
         else:
             return False
 
+    def set_uuid(self, username=None, uuid=None):
+        if username:
+            self.uuid = self.get_uuid(username)
+        else:
+            self.uuid = uuid
+    
+    def get_minecraft_arguments(self, arguments):
+
+        arguments_var = {}
+        arguments_var["${auth_player_name}"] = self.username
+        arguments_var["${version_name}"] = self.version
+        arguments_var["${game_directory}"] = "\".\""
+        arguments_var["${assets_root}"] = arguments_var["${game_assets}"] = "assets"
+        arguments_var["${assets_index_name}"] = self.version_parser.get_assetIndex()
+        arguments_var["${auth_uuid}"] = self.uuid
+        arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = self.access_token
+        arguments_var["${user_type}"] = "mojang"
+        arguments_var["${version_type}"] = self.version_parser.get_versionType()
+        arguments_var["${user_properties}"] = "{}"
+
+        for index in range(len(arguments)):
+            for argument in arguments_var:
+                if argument in arguments[index]:
+                    arguments[index] = arguments_var[argument]
+        
+        return arguments
+    
+    def get_default_java_arguments(self):
+        default_java_arg = []
+        default_java_arg.append("-Xmx2G") 
+        default_java_arg.append("-XX:+UnlockExperimentalVMOptions") 
+        default_java_arg.append("-XX:+UseG1GC -XX:G1NewSizePercent=20") 
+        default_java_arg.append("-XX:G1ReservePercent=20")
+        default_java_arg.append("-XX:MaxGCPauseMillis=50")
+        default_java_arg.append("-XX:G1HeapRegionSize=32M")
+        return default_java_arg
+    
+    def get_java_arguments(self, arguments):
+        values = []
+        
+        arguments_var = {}
+        arguments_var["${launcher_name}"] = "gally_launcher"
+        arguments_var["${launcher_version}"] = "unknown"
+        arguments_var["${version_name}"] = self.version
+        arguments_var["${library_directory}"] = "%s" % self.libraries_root
+        arguments_var["${classpath_separator}"] = self.classpath_separator
+        
+        if self.system == "windows":
+            arguments_var["${classpath}"] = "\"%classpath%\""
+        elif self.system == "linux":
+            arguments_var["${classpath}"] = "\"$classpath\""
+
+        if self.binary_root:
+            arguments_var["${natives_directory}"] = self.binary_root
+        
+        if arguments == []:
+            values.append("-Djava.library.path=%s" % arguments_var["${natives_directory}"])
+            values.append("-cp")
+            values.append(arguments_var["${classpath}"])
+            return values
+
+        for index in range(len(arguments)):
+            value = arguments[index]
+            for argument in arguments_var:
+                if argument in arguments[index]:
+                    value = value.replace(argument, arguments_var[argument])
+            values.append(value)
+        
+        return values
+
+
     def start(self, assets=True, java=None, console=False, java_argument=None, game_directory=None, debug=False, dont_start=False, ip=None, port = None):
         if game_directory == None:
             game_directory = self.profile_gamedir
-    
+
+        if self.uuid == None:
+            self.set_uuid(username=self.username)
+
         logging.info("downloading java")
         platform = None
         if self.architecture == "i386" or self.architecture == "x86" or self.architecture == "x64":
@@ -319,21 +421,24 @@ class gally_launcher:
             platform = self.system
         
         component = self.version_parser.get_java_component()
-        java_path = "%s/runtime/%s/%s/%s/" % (self.minecraft_root, component, platform, component)
-        java_manifest = self.download_java(platform, component, java_path)
-
+        java_path = "%s/runtime/%s/%s/%s" % (self.minecraft_root, component, platform, component)
+        java_path = self.download_java(platform, component, java_path)
+        
         logging.info("downloading client")
-        self.version_parser.download_client()
+        download_client(self.version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), self.version)
+        main_jar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
 
         logging.info("downloading library")
-        self.version_parser.download_libraries()
+        download_libraries(self.version_parser.json_loaded["libraries"], self.libraries_root, self.system)
+
+        logging.info("downloading binary")
+        lwjgl_version = self.version_parser.get_lastest_lwjgl_version()
+        self.binary_root = "%s/%s" % (self.binary_root, lwjgl_version)
+        download_binary(lwjgl_version, self.binary_root, self.system)
 
         if assets == True:
             logging.info("downloading assets")
-            self.version_parser.download_assets()
-            
-        logging.info("downloading binary")
-        self.version_parser.download_binary()
+            download_assets(self.version_parser.json_loaded, self.assets_root)
 
         if java == None:
             if console:
@@ -344,48 +449,67 @@ class gally_launcher:
                 else:
                     java = "java"
 
-            java = "%s/%s" % (self.java_path, java)
+            java = "%s/%s" % (java_path, java)
             
         JAVA_ARGUMENT = []
         
         classpath = None
+
+        # Setting up classpath
         if os.path.isfile("debug/classpath"):
-           with open("debug/classpath",'r') as classpath_file:
-            classpath = classpath_file.read()
+            with open("debug/classpath",'r') as classpath_file:
+                classpath = classpath_file.read()
+        else:
+            classpath = self.version_parser.classpath()
+            for index in range(len(classpath)):
+                classpath[index] = "%s/%s" % (self.libraries_root, classpath[index])
+
+            if not main_jar:
+                main_jar = "%s/%s/%s" % (self.minecraft_root, self.version, self.version_parser.get_jar())
+            if main_jar:
+                classpath.append("%s" % (main_jar))
+            classpath = self.classpath_separator.join(classpath)
+        os.environ["classpath"] = classpath
         
-        mainclass = self.version_parser.get_mainclass()
+
+        # Setting up mainclass
         if os.path.isfile("debug/mainclass"):
             with open("debug/mainclass", "r") as mainclass_file:
                 mainclass = mainclass_file.read()
+        else:
+            mainclass = self.version_parser.get_mainclass()
 
+        # Game arguments
         if os.path.isfile("debug/game_argument"):
             with open("debug/game_argument", "r") as game_argument_file:
                 game_argument = [game_argument_file.read()]
         else:
-            game_argument = self.version_parser.get_minecraft_arguments(access_token=self.access_token, game_directory=game_directory)
+            game_argument = self.version_parser.minecraft_arguments()
+            game_argument = self.get_minecraft_arguments(game_argument)
 
         if ip and port:
             game_argument.append("--server %s" % ip)
             game_argument.append("--port %s" % port)
         
+        # Java argumennts
         default_arguments = []
-
         if java_argument:
             default_arguments = java_argument
         elif self.opt_java_arg:
             default_arguments = self.opt_java_arg
         else:
-            default_arguments = self.version_parser.get_default_java_arguments()
+            default_arguments = self.get_default_java_arguments()
+
         if type(default_arguments) == str:
             default_arguments = [default_arguments]
 
         if os.path.isfile("debug/java_argument"):
-            os.environ["classpath"] = classpath
             with open("debug/java_argument", "r") as java_argument_file:
                 java_argument = [java_argument_file.read()]
         else:
-            java_argument = default_arguments + self.version_parser.get_java_arguments(classpath=classpath)
-
+            java_argument = self.version_parser.java_arguments()
+            java_argument = default_arguments + self.get_java_arguments(java_argument)
+            
 
         arguments = [java_argument, mainclass, game_argument]
         for argument in arguments:
@@ -405,7 +529,6 @@ class gally_launcher:
             _file.write_file("%s/java" % debug_path, java)
         
         _file.chdir(self.minecraft_root)
-            
         command = "\"%s\" %s" % (java, JAVA_ARGUMENT)
         if console == False:
             if self.system == "linux":

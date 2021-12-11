@@ -3,14 +3,14 @@ import libraries.utils._file as _file
 import os
 import json
 
-
-if self.system == "linux":
+system = _file.get_os()
+if system == "linux":
     try:
         temp_directory = os.environ["TMPDIR"]
     except:
         temp_directory = "/tmp"
     delim = "/"
-elif self.system == "windows":
+elif system == "windows":
     temp_directory = os.environ["temp"]
     delim = "\\"
 
@@ -27,13 +27,25 @@ def get_manifest(platform, component):
     return url
 
 def download_java(manifest, path):
+    to_download = []
+    executable = []
+    total_size = 0
     for item in manifest["files"]:
         item_path = path + delim + item
         if manifest["files"][item]["type"] == "directory":
             if os.path.isdir(item_path) == False:
                 _file.mkdir_recurcive(item_path)
         elif manifest["files"][item]["type"] == "file":
-            if web.download(manifest["files"][item]["downloads"]["raw"]["url"], item_path):
-                if manifest["files"][item]["executable"]:
-                    _file.command("chmod +x %s" % item_path)
+            url = manifest["files"][item]["downloads"]["raw"]["url"]
+            size = manifest["files"][item]["downloads"]["raw"]["size"]
+            to_download.append((url, item_path, size))
+            if manifest["files"][item]["executable"] == True:
+                executable.append(item_path)
+            total_size += size
             
+
+    web.download(multiple_files=to_download, total_size=total_size, string="downloading java")
+    if system == "linux":
+        for i in executable:
+            _file.command("chmod +x %s" % i)
+    

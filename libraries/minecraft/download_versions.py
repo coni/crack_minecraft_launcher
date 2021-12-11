@@ -87,6 +87,6 @@ class search_version:
         return version_path
 
     def get_downloaded_versions(self):
-        logging.debug("check downloaded versions of Minecrafts")
+        logging.debug("check downloaded versions of Minecraft")
         folder = _file.ls("%s/%s" % (self.minecraft_root, self.versions_path), type="folder")
         return folder

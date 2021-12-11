@@ -241,10 +241,10 @@ if type_ == "client":
         assets = False
     
     if args["uuid_of"]:
-        launcher.version_parser.set_uuid(username=args["uuid_of"])
+        launcher.set_uuid(username=args["uuid_of"])
     
     if args["uuid"]:
-        launcher.version_parser.set_uuid(uuid=args["uuid_of"])
+        launcher.set_uuid(uuid=args["uuid_of"])
         
     if args["profile"]:
         start = launcher.load_profile(args["profile"])

@@ -109,7 +109,7 @@ def extract_archive(archive_name, path, to_extract=[]):
 
 def mv(source, destination):
     logging.debug("[file] moving %s to %s" % (source, destination))
-    os.rename(source, destination)
+    shutil.move(source, destination)
 
 def cp(source, destination):
     logging.debug("[file] copying %s to %s" % (source, destination))
