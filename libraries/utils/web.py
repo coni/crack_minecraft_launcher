@@ -22,7 +22,6 @@ header= {
     "Connection": "Keep-Alive"
     }
 
-
 opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0'), ("Accept", "*/*"), ("Accept-Encoding", "identity"), ("Connection", "Keep-Alive")]
 urllib.request.install_opener(opener)
@@ -58,8 +57,10 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
         if path:
             if os.path.isdir(path) == False:
                 _file.mkdir_recurcive(path)
+        
     
     if url and filename:
+        url = urllib.parse.quote(url).replace("%3A",":")
         multiple_files.append((url, filename, total_size))
 
     all_size = 0
@@ -89,7 +90,7 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
                     all_size += len(buffer)
                     f.write(buffer)
                     if string:
-                        status = r"%s [%i%%]" % (string, all_size * 100. / total_size)
+                        status = r"%s [%i%%]    " % (string, all_size * 100. / total_size)
                         status = status + chr(8)*(len(status)+1)
                         sys.stdout.flush()
                         sys.stdout.write(status)
@@ -102,10 +103,8 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
                 logging.debug("[web] can't download %s from %s" % (filename, url))
         else:
             all_size += size
-        
-        if all_size == total_size and string:
-            sys.stdout.write("\n")
     return True
+        
 
 def get(url):
     try:

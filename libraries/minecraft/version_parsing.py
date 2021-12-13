@@ -15,8 +15,20 @@ class parse_minecraft_version:
         else:
             if system == "windows" or system == "linux":
                 self.system = system
+                
             else:
                 self.system = _file.get_os()
+
+                
+        if self.system == "linux":
+            try:
+                self.temp_directory = os.environ["TMPDIR"]
+            except:
+                self.temp_directory = "/tmp"
+            self.delim = "/"
+        elif system == "windows":
+            self.temp_directory = os.environ["temp"]
+            self.delim = "\\"
 
         self.minecraft_root = minecraft_root
         self.versions_root = versions_root
@@ -179,16 +191,13 @@ class parse_minecraft_version:
             else:
                 version_minor = 0
 
-        if self.inheritsFrom:
-            mainclass_inherits = self.inheritsFrom_parse.get_mainclass()
-        
-
         jar_path = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
         manifest_mainclass = None
         manifest_path = "META-INF/MANIFEST.MF"
+        
         try:
-            if _file.extract_archive(jar_path, temp_directory, to_extract=manifest_path):
-                manifest_text = _file.get_text("%s/%s" % (temp_directory, manifest_path))
+            if _file.extract_archive(jar_path, self.temp_directory, to_extract=manifest_path):
+                manifest_text = _file.get_text("%s/%s" % (self.temp_directory, manifest_path))
                 manifest_mainclass = string.find_string(manifest_text, "Main-Class")
                 if manifest_mainclass:
                     manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]

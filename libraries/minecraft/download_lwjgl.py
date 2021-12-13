@@ -2,7 +2,7 @@ import libraries.utils.web as web
 import libraries.utils._file as _file
 import os
 
-temp_dir = "/tmp"
+temp_dir = "/tmp/gally_launcher"
 
 def download_binary(lwjgl_version, path, system):
 

@@ -96,8 +96,8 @@ class gally_launcher:
 
         import libraries.minecraft.java as jre_downloader
         java_manifest_url = jre_downloader.get_manifest(platform,component)
-
         java_manifest_path = "%s/java_manifest.json" % temp_directory
+        _file.rm_rf(java_manifest_path)
         java_manifest = None
         if web.download(java_manifest_url, java_manifest_path):
             with open(java_manifest_path, "r") as temp:
@@ -388,7 +388,7 @@ class gally_launcher:
             arguments_var["${classpath}"] = "\"$classpath\""
 
         if self.binary_root:
-            arguments_var["${natives_directory}"] = self.binary_root
+            arguments_var["${natives_directory}"] = self.binary_root + "/"
         
         if arguments == []:
             values.append("-Djava.library.path=%s" % arguments_var["${natives_directory}"])
@@ -422,7 +422,8 @@ class gally_launcher:
         
         component = self.version_parser.get_java_component()
         java_path = "%s/runtime/%s/%s/%s" % (self.minecraft_root, component, platform, component)
-        java_path = self.download_java(platform, component, java_path)
+        self.download_java(platform, component, java_path)
+        java_path += "/bin"
         
         logging.info("downloading client")
         download_client(self.version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), self.version)
@@ -543,5 +544,5 @@ class gally_launcher:
             logging.debug(command)
 
         if dont_start == False:
-            logging.info("starting Minecraft.. please wait")
+            sys.stdout.write("launching Minecraft")
             _file.command(command, console=console)
