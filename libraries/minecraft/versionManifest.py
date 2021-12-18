@@ -1,21 +1,18 @@
 from sys import version
-import libraries.utils.web as web
-import libraries.utils._file as _file
+import libraries.utils.request as request
+import libraries.utils.system as system
 import json
 import logging
 
-class search_version:
+class versionManifest:
 
-    def __init__(self, minecraft_root=".", versions_path="versions"):
+    def __init__(self, versions_path="versions"):
         self.versions_path = versions_path
-        self.minecraft_root = minecraft_root
 
-        if web.is_connected():
-            manifest_versions_path = "%s/%s/%s" % (self.minecraft_root, versions_path, "version_manifest_v2.json")
-            _file.rm_rf(manifest_versions_path)
-            web.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path)
-        elif web.is_connected() == False and os.path.isfile(manifest_versions_path) == False:
-            logging.error("Canno't find %s" % manifest_versions_path)
+        manifest_versions_path = "%s/%s" % (self.versions_path, "version_manifest_v2.json")
+
+        system.rm_rf(manifest_versions_path)
+        request.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path)
 
         json_file = open(manifest_versions_path,"r")
         self.json_loaded = json.load(json_file) 
@@ -80,13 +77,11 @@ class search_version:
 
         if exist == False:
             return False
-
-        version_path = "%s/%s/%s/%s.json" % (self.minecraft_root, self.versions_path, version, version)
-        web.download(version_url, version_path)
-
+        version_path = "%s/%s/%s.json" % (self.versions_path, version, version)
+        request.download(version_url, version_path)
         return version_path
 
     def get_downloaded_versions(self):
         logging.debug("check downloaded versions of Minecraft")
-        folder = _file.ls("%s/%s" % (self.minecraft_root, self.versions_path), type="folder")
+        folder = system.ls(self.versions_path, type="folder")
         return folder

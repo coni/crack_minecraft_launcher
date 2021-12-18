@@ -1,5 +1,5 @@
-import libraries.utils.web as web
-import libraries.utils._file as _file
+import libraries.utils.request as request
+import libraries.utils.system as system
 import os
 
 temp_dir = "/tmp/gally_launcher"
@@ -56,14 +56,14 @@ def download_binary(lwjgl_version, path, system):
         for url in binary_url:
             binary_filename = url.split("/")[-1]
             binary_file = "%s/%s" % (path, binary_filename)
-            web.download(url, binary_file)
+            request.download(url, binary_file)
 
     elif zip_url:
-        web.download(zip_url, zip_filename)
+        request.download(zip_url, zip_filename)
         if os.path.isfile(zip_filename):
-            list_folder_extracted = _file.extract_archive(zip_filename, temp_dir)
+            list_folder_extracted = system.extract_archive(zip_filename, temp_dir)
 
             for folder in list_folder_extracted:
                 if folder == "lwjgl-%s/native/%s/" % (lwjgl_version, system):
-                    _file.mv("%s/lwjgl-%s/native/%s/" % (temp_dir, lwjgl_version, system),"%s" % path)
+                    system.mv("%s/lwjgl-%s/native/%s/" % (temp_dir, lwjgl_version, system),"%s" % path)
     return True

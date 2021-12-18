@@ -1,23 +1,22 @@
 import json
 import os
 import libraries.utils.string as string
-import libraries.utils.web as web
-import libraries.utils._file as _file
+import libraries.utils.system as system
 import re
 import logging
 
-class parse_minecraft_version:
+class version:
     def __init__(self, version=None, minecraft_root=".", versions_root="versions", inherit=False, system=None,):
         
         self.system = None
         if system == None:
-            self.system = _file.get_os()
+            self.system = system.get_os()
         else:
             if system == "windows" or system == "linux":
                 self.system = system
                 
             else:
-                self.system = _file.get_os()
+                self.system = system.get_os()
 
                 
         if self.system == "linux":
@@ -196,8 +195,8 @@ class parse_minecraft_version:
         manifest_path = "META-INF/MANIFEST.MF"
         
         try:
-            if _file.extract_archive(jar_path, self.temp_directory, to_extract=manifest_path):
-                manifest_text = _file.get_text("%s/%s" % (self.temp_directory, manifest_path))
+            if system.extract_archive(jar_path, self.temp_directory, to_extract=manifest_path):
+                manifest_text = system.get_text("%s/%s" % (self.temp_directory, manifest_path))
                 manifest_mainclass = string.find_string(manifest_text, "Main-Class")
                 if manifest_mainclass:
                     manifest_mainclass = manifest_mainclass.split("Main-Class: ")[1]

@@ -2,7 +2,7 @@ import urllib.request
 import urllib.parse
 import os
 import sys
-import libraries.utils._file as _file
+import libraries.utils.system as system
 import uuid
 import logging
 import json
@@ -13,14 +13,6 @@ import socket
 class obj:
     def __init__(self):
         pass
-
-
-header= {
-    "User-Agent": "hii",
-    "Accept": "*/*",
-    "Accept-Encoding": "identity",
-    "Connection": "Keep-Alive"
-    }
 
 opener = urllib.request.build_opener()
 opener.addheaders = [('User-agent', 'Mozilla/5.0'), ("Accept", "*/*"), ("Accept-Encoding", "identity"), ("Connection", "Keep-Alive")]
@@ -36,14 +28,14 @@ def is_connected():
 
 def download(url="", filename="", multiple_files=[], total_size=0, string="", exist_ignore=False):
 
-    system = _file.get_os()
-    if system == "linux":
+    osNamae = system.get_os()
+    if osNamae == "linux":
         delim = "/"
         try:
             temp_directory = os.environ["TMPDIR"]
         except:
             temp_directory = "/tmp/gally_launcher"
-    elif system == "windows":
+    elif osNamae == "windows":
         delim = "\\"
         temp_directory = os.environ["temp"] + "/gally_launcher"
 
@@ -56,7 +48,7 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
         path = delim.join(filename.split(delim)[:-1])
         if path:
             if os.path.isdir(path) == False:
-                _file.mkdir_recurcive(path)
+                system.mkdir_recurcive(path)
         
     
     if url and filename:
@@ -75,8 +67,8 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
             temp_directory = delim.join(temp_filename.split(delim)[:-1])
             if directory:
                 if os.path.isdir(directory) == False:
-                    _file.mkdir_recurcive(directory)
-                    _file.mkdir_recurcive(temp_directory)
+                    system.mkdir_recurcive(directory)
+                    system.mkdir_recurcive(temp_directory)
             
             try:
                 u = urllib.request.urlopen(url)
@@ -95,7 +87,7 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
                         sys.stdout.flush()
                         sys.stdout.write(status)
                 f.close()
-                _file.mv(temp_filename, path)
+                system.mv(temp_filename, path)
 
             except KeyboardInterrupt:
                 sys.exit()

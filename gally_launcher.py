@@ -2,10 +2,10 @@ import argparse
 import logging
 import sys
 import os
-from libraries.launcher.launcher import gally_launcher
+from libraries.launcher.client import gally_launcher
 from libraries.launcher.server import minecraft_server
-import libraries.utils.web as web
-import libraries.utils._file as _file
+import libraries.utils.request as request
+import libraries.utils.system as system
 import json
 
 class MyParser(argparse.ArgumentParser):
@@ -23,7 +23,7 @@ start = False
 java_argument = None
 type_ = "client"
 debug = False
-system = _file.get_os()
+system = system.get_os()
 
 parser = MyParser()
 
@@ -132,7 +132,7 @@ if args["update"]:
     else:
         url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher.exe"
 
-    if web.download(url, executable_temp):
+    if request.download(url, executable_temp):
         if system == "windows":
             filename = sys.executable.split("\\")[-1]
             if os.path.isfile(temp_directory + "/" + filename):
@@ -140,7 +140,7 @@ if args["update"]:
             os.rename(executable_fullpath, temp_directory + "/" + filename)
         os.rename(executable_temp, executable_fullpath)
         if system == "linux":
-            _file.command("chmod +x %s" % executable_fullpath)
+            system.command("chmod +x %s" % executable_fullpath)
             
         logging.info("sucessfully updated")
     else:
@@ -153,7 +153,7 @@ if args["test"]:
 
     java_manifest_path = "/tmp/java_manifest.json"
     java_manifest = None
-    if web.download(java_manifest_url, java_manifest_path):
+    if request.download(java_manifest_url, java_manifest_path):
         with open(java_manifest_path, "r") as temp:
             java_manifest = json.load(temp)
         hihi.download_java(java_manifest, "./java/")
@@ -184,7 +184,7 @@ if args["install"]:
                 break
         if bin_path:
             try:
-                filename = _file.cp(executable_fullpath, bin_path + "gally_launcher")
+                filename = system.cp(executable_fullpath, bin_path + "gally_launcher")
                 if system == "linux":
                     os.system("chmod +x %s" % filename)
                 logging.info("sucessfully installed gally_launcher to the path (%s)", bin_path)

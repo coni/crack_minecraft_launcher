@@ -1,4 +1,4 @@
-import libraries.utils.web as web
+import libraries.utils.request as request
 import json
 
 def download_assets(manifest, path):
@@ -14,9 +14,9 @@ def download_assets(manifest, path):
             config_filename = manifest["logging"]["client"]["file"]["id"]
             config_url = manifest["logging"]["client"]["file"]["url"]
             config_fullpath = "%s/log_configs/%s" % (path, config_filename)
-            web.download(config_url, config_fullpath)
+            request.download(config_url, config_fullpath)
 
-        web.download(asset_index_url, asset_index_fullpath)
+        request.download(asset_index_url, asset_index_fullpath)
         with open(asset_index_fullpath,'r') as asset_index_file:
             asset_index_json = json.load(asset_index_file)
 
@@ -31,4 +31,4 @@ def download_assets(manifest, path):
             total_size += size
             to_download.append((url, asset_path, size))
         
-        web.download(multiple_files=to_download, total_size=total_size, string="downloading assets")
+        request.download(multiple_files=to_download, total_size=total_size, string="downloading assets")

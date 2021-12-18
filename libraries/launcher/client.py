@@ -1,29 +1,32 @@
 import os
-import libraries.utils._file as _file
-import libraries.utils.web as web
-from libraries.launcher.openJava import get_java
-from libraries.minecraft.version_parsing import parse_minecraft_version
-from libraries.minecraft.launcher_profile import profile
-from libraries.minecraft.download_versions import search_version
-from libraries.minecraft.download_libraries import download_libraries
-from libraries.minecraft.download_client import download_client
-from libraries.minecraft.download_assets import download_assets
-from libraries.minecraft.download_lwjgl import download_binary
+import libraries.utils.system as system
+import libraries.utils.request as request
+
+from libraries.minecraft.version import version
+from libraries.minecraft.profile import profile
+from libraries.minecraft.versionManifest import versionManifest
+
+from libraries.download.libraries import download_libraries
+from libraries.download.client import download_client
+from libraries.download.assets import download_assets
+from libraries.download.lwjgl import download_binary
+from libraries.download.openjdk import get_java
+
 import logging
 import json
 import sys
 import getpass
 import re
 
-system = _file.get_os()
-if system == "linux":
+osName = system.get_os()
+if osName == "linux":
     try:
         temp_directory = os.environ["TMPDIR"]
     except:
         temp_directory = "/tmp/gally_launcher"
-elif system == "windows":
+elif osName == "windows":
     temp_directory = os.environ["temp"] + "/gally_launcher"
-_file.mkdir_recurcive(temp_directory)
+system.mkdir_recurcive(temp_directory)
 
 class obj:
     def __init__(self):
@@ -32,8 +35,8 @@ class obj:
 class gally_launcher:
     def __init__(self, minecraft_root=None):
         
-        self.system = system
-        self.architecture = _file.get_architechture()
+        self.system = osName
+        self.architecture = system.get_architechture()
         if minecraft_root == None:
             if self.system == "windows":
                 minecraft_root = "%s/.minecraft" % (os.environ["appdata"])
@@ -68,11 +71,11 @@ class gally_launcher:
         self.localid = None
 
         if os.path.isdir(self.minecraft_root) == False:
-            _file.mkdir_recurcive(self.minecraft_root)
+            system.mkdir_recurcive(self.minecraft_root)
         
-        self.version_parser = parse_minecraft_version(system=self.system, minecraft_root=self.minecraft_root, versions_root=self.versions_root)
+        self.version_parser = version(system=self.system, minecraft_root=self.minecraft_root, versions_root=self.versions_root)
         self.profile = profile(minecraft_root=self.minecraft_root)
-        self.downloader = search_version(minecraft_root=self.minecraft_root)
+        self.downloader = versionManifest(versions_path=self.versions_root)
 
     def load_version(self, argument):
         if self.downloader.exist(argument):
@@ -94,12 +97,12 @@ class gally_launcher:
 
     def download_java(self, platform, component, path):
 
-        import libraries.minecraft.java as jre_downloader
+        import libraries.download.java as jre_downloader
         java_manifest_url = jre_downloader.get_manifest(platform,component)
         java_manifest_path = "%s/java_manifest.json" % temp_directory
-        _file.rm_rf(java_manifest_path)
+        system.rm_rf(java_manifest_path)
         java_manifest = None
-        if web.download(java_manifest_url, java_manifest_path):
+        if request.download(java_manifest_url, java_manifest_path):
             with open(java_manifest_path, "r") as temp:
                 java_manifest = json.load(temp)
             jre_downloader.download_java(java_manifest, path)
@@ -108,12 +111,12 @@ class gally_launcher:
 
     def get_uuid(self, username=None):
         if username != None:
-            req = web.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
+            req = request.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
             if req:
                 return json.loads(req)["id"]
 
         uuid_ = str(uuid.uuid1()).replace("-","")
-        logging.debug("[web] generate uuid : %s" % uuid_)
+        logging.debug("[request] generate uuid : %s" % uuid_)
         return uuid_
 
     def download_openjdk(self, version=None):
@@ -138,19 +141,18 @@ class gally_launcher:
             filename = "%s.tar.gz" % filename
 
         if url:
-            java_archive = web.download(url, "%s/%s" % (temp_directory,filename))
+            java_archive = request.download(url, "%s/%s" % (temp_directory,filename))
         else:
             logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architecture))
             exit()
-        
+
         if os.path.isdir(jdk_directory) == False:
             if java_archive == False:
                 print("java_archive : %s" % java_archive)
                 exit()
             else:
-                extracted_directory = _file.extract_archive(java_archive, java_directory)
-                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory)
-                
+                extracted_directory = system.extract_archive(java_archive, java_directory)
+                system.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory)
         self.java_path = "%s/bin" % jdk_directory
         return True
 
@@ -222,7 +224,7 @@ class gally_launcher:
         }
 
         headers={'Content-Type':'application/json'}
-        req = web.post("https://authserver.mojang.com/authenticate", payload, headers=headers)
+        req = request.post("https://authserver.mojang.com/authenticate", payload, headers=headers)
 
         if req.status == 200:
             logging.debug("authorisation granted")
@@ -232,7 +234,7 @@ class gally_launcher:
             self.access_token = auth_response["accessToken"]
             
             if self.localid == None:
-                localid = web.get_uuid()
+                localid = request.get_uuid()
 
             accounts_information = {
                 "accessToken" : self.access_token,
@@ -242,7 +244,7 @@ class gally_launcher:
             }
 
             self.launcher_accounts["accounts"][self.localid] = accounts_information
-            _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
+            system.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
 
         else:
             logging.error("Wrong Email or Password!")
@@ -281,10 +283,10 @@ class gally_launcher:
                     "accessToken": accessToken,
                     "clientToken": clientToken
                 }
-                if web.post("https://authserver.mojang.com/invalidate", payload, headers=headers).status == 204:
+                if request.post("https://authserver.mojang.com/invalidate", payload, headers=headers).status == 204:
                     self.launcher_accounts["accounts"].pop(id)
 
-                    _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
+                    system.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
                     return True
                 else:
                     return False
@@ -297,7 +299,7 @@ class gally_launcher:
             "username": email,
             "password": password
         }
-        resp = web.post("https://authserver.mojang.com/signout", payload, headers=headers)
+        resp = request.post("https://authserver.mojang.com/signout", payload, headers=headers)
         if resp.status == 200 or resp.status == 204:
             return True
         else:
@@ -309,14 +311,14 @@ class gally_launcher:
             "clientToken": clientToken
         }
         headers={'Content-type':'application/json'}
-        resp = web.post("https://authserver.mojang.com/refresh", payload, headers=headers)
+        resp = request.post("https://authserver.mojang.com/refresh", payload, headers=headers)
 
         if resp.status == 200 or resp.status == 204:
             auth_response = json.loads(resp.read())
             if "accessToken" in auth_response:
                 self.access_token = auth_response["accessToken"]
                 self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.access_token
-                _file.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
+                system.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
                 return True
         else:
             return False
@@ -328,7 +330,7 @@ class gally_launcher:
         }
         
         headers = {'Content-type':'application/json'}
-        resp = web.post("https://authserver.mojang.com/validate", payload, headers=headers)
+        resp = request.post("https://authserver.mojang.com/validate", payload, headers=headers)
 
         if resp.status == 204:
             return True
@@ -451,9 +453,9 @@ class gally_launcher:
                     java = "java"
 
             java = "%s/%s" % (java_path, java)
-            
+
         JAVA_ARGUMENT = []
-        
+
         classpath = None
 
         # Setting up classpath
@@ -523,13 +525,13 @@ class gally_launcher:
         
         if debug:
             debug_path = "debug/%s" % self.version
-            _file.write_file("%s/classpath" % debug_path, os.environ["classpath"])
-            _file.write_file("%s/mainclass" % debug_path, mainclass)
-            _file.write_file("%s/java_argument" % debug_path, " ".join(java_argument))
-            _file.write_file("%s/game_argument" % debug_path, " ".join(game_argument))
-            _file.write_file("%s/java" % debug_path, java)
+            system.write_file("%s/classpath" % debug_path, os.environ["classpath"])
+            system.write_file("%s/mainclass" % debug_path, mainclass)
+            system.write_file("%s/java_argument" % debug_path, " ".join(java_argument))
+            system.write_file("%s/game_argument" % debug_path, " ".join(game_argument))
+            system.write_file("%s/java" % debug_path, java)
         
-        _file.chdir(self.minecraft_root)
+        system.chdir(self.minecraft_root)
         command = "\"%s\" %s" % (java, JAVA_ARGUMENT)
         if console == False:
             if self.system == "linux":
@@ -544,5 +546,5 @@ class gally_launcher:
             logging.debug(command)
 
         if dont_start == False:
-            sys.stdout.write("launching Minecraft")
-            _file.command(command, console=console)
+            sys.stdout.write("launching Minecraft\n")
+            system.command(command, console=console)

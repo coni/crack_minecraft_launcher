@@ -1,6 +1,6 @@
 import os
 import json
-from libraries.minecraft.download_versions import search_version
+from libraries.minecraft.versionManifest import versionManifest
 import logging
 
 class profile:

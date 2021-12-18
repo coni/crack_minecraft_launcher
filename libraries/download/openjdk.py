@@ -1,5 +1,3 @@
-import libraries.utils._file
-
 api = "https://api.adoptium.net"
 
 def get_java(majorVersion, os=None, architecture=None):

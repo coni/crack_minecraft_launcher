@@ -1,4 +1,4 @@
-import libraries.utils.web as web
+import libraries.utils.request as request
 
 def download_libraries(libraries, libraries_root, system):
     to_download = []
@@ -50,4 +50,4 @@ def download_libraries(libraries, libraries_root, system):
                 to_download.append((url, path, size))
         total_size += size
     
-    web.download(multiple_files=to_download, total_size=total_size, string="downloading libraries")
+    request.download(multiple_files=to_download, total_size=total_size, string="downloading libraries")

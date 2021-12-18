@@ -1,9 +1,9 @@
 import os
-from libraries.minecraft.version_parsing import parse_minecraft_version
-from libraries.minecraft.download_versions import search_version
-from libraries.launcher.openJava import get_java
-import libraries.utils._file as _file
-import libraries.utils.web as web
+from libraries.minecraft.version import version
+from libraries.minecraft.versionManifest import versionManifest
+from libraries.download.openjdk import get_java
+import libraries.utils.system as system
+import libraries.utils.request as request
 import logging
 import re
 
@@ -11,16 +11,16 @@ class minecraft_server:
 
     def __init__(self, version=None, server_root=None, java_arguments=None):
         
-        self.system = _file.get_os()
-        self.architechture = _file.get_architechture()
+        self.system = system.get_os()
+        self.architechture = system.get_architechture()
         self.java_arguments = None
         self.java = "java"
         self.javaVersion = None
         self.version = version
         if server_root == None:
-            if _file.get_os() == "windows":
+            if system.get_os() == "windows":
                 server_root = "%s/.minecraft" % (os.environ["appdata"])
-            elif _file.get_os() == "linux":
+            elif system.get_os() == "linux":
                 server_root = "~/.minecraft"
 
             self.server_root = "%s/server/%s" % (server_root, version)
@@ -60,7 +60,7 @@ class minecraft_server:
             filename = "%s.tar.gz" % filename
 
         if url:
-            java_archive = web.download(url, "%s/%s" % (temp_directory,filename))
+            java_archive = request.download(url, "%s/%s" % (temp_directory,filename))
         else:
             logging.error("Operating System or Architecture Unknown : (%s, %s)" % (self.system, self.architechture))
             exit()
@@ -70,8 +70,8 @@ class minecraft_server:
                 print("java_archive : %s" % java_archive)
                 exit()
             else:
-                extracted_directory = _file.extract_archive(java_archive, java_directory)
-                _file.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory )
+                extracted_directory = system.extract_archive(java_archive, java_directory)
+                system.mv("%s/%s" % (java_directory, extracted_directory[0]), jdk_directory )
                 
         self.java_path = "%s/bin" % jdk_directory
         return True
@@ -102,7 +102,7 @@ class minecraft_server:
         version_parser = parse_minecraft_version(minecraft_root=".temp",version=self.version)
         self.javaVersion = version_parser.javaVersion
         jar_path = version_parser.download_server(self.server_root)
-        _file.rm_rf(".temp")
+        system.rm_rf(".temp")
         return jar_path
     
     def get_java_arguments(self):
@@ -122,7 +122,7 @@ class minecraft_server:
 
         server_properties_file = "%s/server.properties" % self.server_root
         if os.path.isfile(server_properties_file):
-            text_file = _file.get_text(server_properties_file)
+            text_file = system.get_text(server_properties_file)
 
             for line in text_file.splitlines():
                 for i in server_properties:
@@ -176,4 +176,4 @@ class minecraft_server:
         if jar_filename == None:
             jar_filename = "server.jar"
 
-        _file.command("\"%s\" %s -jar %s %s" % (java, java_arguments, jar_filename, server_arguments))
+        system.command("\"%s\" %s -jar %s %s" % (java, java_arguments, jar_filename, server_arguments))
