@@ -32,3 +32,4 @@ def download_assets(manifest, path):
             to_download.append((url, asset_path, size))
         
         request.download(multiple_files=to_download, total_size=total_size, string="downloading assets")
+        return True

@@ -6,17 +6,13 @@ import re
 import logging
 
 class version:
-    def __init__(self, version=None, minecraft_root=".", versions_root="versions", inherit=False, system=None,):
+    def __init__(self, version=None, minecraft_root=".", versions_root="versions", osName=None,):
         
         self.system = None
-        if system == None:
+        if osName == None:
             self.system = system.get_os()
         else:
-            if system == "windows" or system == "linux":
-                self.system = system
-                
-            else:
-                self.system = system.get_os()
+            self.system = osName
 
                 
         if self.system == "linux":
@@ -41,8 +37,12 @@ class version:
         
         if version:
             self.load_version(version)
-
-
+    
+    def inherit_from(self):
+        if "inheritsFrom" in self.json_loaded:
+            return self.json_loaded["inheritsFrom"]
+        return ""
+        
     def load_version(self, version=None):
         logging.debug("loading %s" % version)
         if version:
@@ -53,50 +53,29 @@ class version:
             return None
 
         self.json_loaded = json.load(json_file)
-    
-        if "inheritsFrom" in self.json_loaded:
-            self.inheritsFrom = self.json_loaded["inheritsFrom"]
-            self.inheritsFrom_parse = parse_minecraft_version(version=self.inheritsFrom,minecraft_root=self.minecraft_root,versions_root=self.versions_root, inherit=True)
-        else:
-            self.inheritsFrom = False
         
         self.version_type = self.get_versionType()
         self.lastest_lwjgl_version = self.get_lastest_lwjgl_version()
         self.assetIndex = self.get_assetIndex()
         self.binary_path = None
         
-        if "javaVersion" in self.json_loaded:
-            self.javaVersion = self.json_loaded["javaVersion"]["majorVersion"]
-        else:
-            if self.inheritsFrom:
-                self.javaVersion = self.inheritsFrom_parse.javaVersion
-            else:
-                self.javaVersion = 8
+        self.javaVersion = self.get_java_version
     
     def get_java_version(self):
         if "javaVersion" in self.json_loaded:
             javaVersion = self.json_loaded["javaVersion"]["majorVersion"]
         else:
-            if self.inheritsFrom:
-                javaVersion = self.inheritsFrom_parse.get_java_version()
-            else:
-                javaVersion = 8
+            javaVersion = 8
         return javaVersion
 
     def get_java_component(self):
         if "javaVersion" in self.json_loaded:
             javaVersion = self.json_loaded["javaVersion"]["component"]
         else:
-            if self.inheritsFrom:
-                javaVersion = self.inheritsFrom_parse.get_java_component()
-            else:
-                javaVersion = "jre-legacy"
+            javaVersion = "jre-legacy"
         return javaVersion
 
     def get_lastest_lwjgl_version(self):
-        
-        if self.inheritsFrom:
-            lastest_inherits = self.inheritsFrom_parse.lastest_lwjgl_version
 
         lwjgl_version = []
         if "libraries" in self.json_loaded:
@@ -109,9 +88,6 @@ class version:
             reggex = re.search(r"(?P<version>[0-9]\.[0-9]\.[0-9])(-(?P<type>.+)-(?P<build>.+)\\)?",lwjgl_version[-1])
             logging.debug("getting the lastest version of lwjgl : %s " % reggex.group("version"))
             return reggex.group("version")
-        else:
-            logging.debug("getting the lastest version of lwjgl : %s " % lastest_inherits)
-            return lastest_inherits
         
     def classpath(self):
         
@@ -178,10 +154,7 @@ class version:
         logging.debug("getting mainclass")
 
         if self.get_versionType() != "snapshot":
-            if self.inheritsFrom:
-                version = self.inheritsFrom
-            else:
-                version = self.version
+            version = self.version
 
             reggex = re.search(r"1\.(?P<majorVersion>[0-9]*)(\.(?P<minorVersion>[0-9]*))?",version)
             version_major = int(reggex.group("majorVersion"))
@@ -210,9 +183,7 @@ class version:
                 elif version_major == 2 and version_minor == 5 or version_major > 2 and version_major < 6:
                     return manifest_mainclass
             mainclass = self.json_loaded["mainClass"]
-            return mainclass
-        else:
-            return mainclass_inherits
+        return mainclass
 
     def get_assetIndex(self):
         assetIndex = None
@@ -224,10 +195,7 @@ class version:
         return assetIndex
 
     def get_versionType(self):
-        assetIndex = False
-        if self.inheritsFrom:
-            assetIndex = self.inheritsFrom_parse.get_versionType()
-
+        assetIndex = None
         if "type" in self.json_loaded:
             assetIndex = self.json_loaded["type"]
 
