@@ -59,7 +59,7 @@ class version:
         self.assetIndex = self.get_assetIndex()
         self.binary_path = None
         
-        self.javaVersion = self.get_java_version
+        self.javaVersion = self.get_java_version()
     
     def get_java_version(self):
         if "javaVersion" in self.json_loaded:

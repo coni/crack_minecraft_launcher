@@ -12,6 +12,7 @@ def download_libraries(libraries, libraries_root, system):
         filename = "%s.jar" % "-".join(librarie_name[-2:])
         path = "%s/%s" % ("/".join(librarie_name[0].split(".")), "/".join(librarie_name[1:]))
         fullpath = "%s/%s/%s" % (libraries_root, path, filename)
+        size = 0
 
         if type(libraries) == dict:
             if "url" in i:

@@ -360,7 +360,6 @@ class gally_launcher:
         for index in range(len(arguments)):
             for argument in arguments_var:
                 if argument in arguments[index]:
-                    print(arguments[index], arguments_var[argument])
                     arguments[index] = arguments_var[argument]
         
         return arguments
@@ -404,8 +403,8 @@ class gally_launcher:
             for argument in arguments_var:
                 if argument in arguments[index]:
                     value = value.replace(argument, arguments_var[argument])
+            value = value.replace(" ","")
             values.append(value)
-        
         return values
 
 
@@ -425,6 +424,8 @@ class gally_launcher:
             if temp:
                 lwjgl_version = temp
             inherit = inheritsFrom[len(inheritsFrom)-1].inherit_from()
+        
+        
 
         if self.uuid == None:
             self.set_uuid(username=self.username)
@@ -434,11 +435,6 @@ class gally_launcher:
             platform = "%s-%s" % (self.system, self.architecture)
         else:
             platform = self.system
-        
-        component = self.version_parser.get_java_component()
-        java_path = "%s/runtime/%s/%s/%s" % (self.minecraft_root, component, platform, component)
-        self.download_java(platform, component, java_path)
-        java_path += "/bin"
         
         download_client(self.version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), self.version)
         main_jar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
@@ -467,17 +463,15 @@ class gally_launcher:
                 classpath[index] = "%s/%s" % (self.libraries_root, classpath[index])
 
             if not main_jar:
-                main_jar = "%s/%s/%s" % (self.minecraft_root, self.version, self.version_parser.get_jar())
-            classpath.append("%s" % (main_jar))
+                classpath.append("%s/%s/%s" % (self.versions_root, self.version, self.version))
 
+            for version_parser in inheritsFrom:
+                download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), version_parser.version)
+                classpath.append("%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version))
+                download_libraries(version_parser.json_loaded["libraries"], self.libraries_root, self.system)
+                if assets == True:
+                    download_assets(version_parser.json_loaded, self.assets_root)
             classpath = self.classpath_separator.join(classpath)
-
-        for version_parser in inheritsFrom:
-            download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), version_parser.version)
-            main_jar = "%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version)
-            download_libraries(version_parser.json_loaded["libraries"], self.libraries_root, self.system)
-            if assets == True:
-                download_assets(version_parser.json_loaded, self.assets_root)
 
         os.environ["classpath"] = classpath
         
@@ -524,8 +518,20 @@ class gally_launcher:
             for version_parser in inheritsFrom:
                 java_argument += self.get_java_arguments(version_parser.java_arguments())
             
+        
+        if os.path.isfile("debug/java"):
+            with open("debug/java", "r") as java_file:
+                java = java_file.read()
+        elif java == None:
+            for version_parser in inheritsFrom:
+                if version_parser.javaVersion > self.javaVersion:
+                    self.javaVersion = version_parser.javaVersion
+                    component = version_parser.get_java_component()
 
-        if java == None:
+            java_path = "%s/runtime/%s/%s/%s" % (self.minecraft_root, component, platform, component)
+            self.download_java(platform, component, java_path)
+            java_path += "/bin"
+
             if console:
                 java = "java"
             else:
