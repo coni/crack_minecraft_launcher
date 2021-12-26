@@ -432,7 +432,6 @@ class gally_launcher:
             platform = self.system
         
         download_client(self.version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), self.version)
-        main_jar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
 
         download_libraries(self.version_parser.json_loaded["libraries"], self.libraries_root, self.system)
 
@@ -457,15 +456,15 @@ class gally_launcher:
             for index in range(len(classpath)):
                 classpath[index] = "%s/%s" % (self.libraries_root, classpath[index])
 
-            if not main_jar:
-                main_jar = ("%s/%s/%s" % (self.versions_root, self.version, self.version))
-            classpath.append(main_jar)
+            mainJar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
             for version_parser in inheritsFrom:
-                download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), version_parser.version)
-                classpath.append("%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version))
+                download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root, version_parser.version), version_parser.version)
+                if os.path.isfile(mainJar) == False:
+                    mainJar = "%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version)
                 download_libraries(version_parser.json_loaded["libraries"], self.libraries_root, self.system)
                 if assets == True:
                     download_assets(version_parser.json_loaded, self.assets_root)
+            classpath.append(mainJar)
             classpath = self.classpath_separator.join(classpath)
 
         os.environ["classpath"] = classpath

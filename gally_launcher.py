@@ -23,7 +23,7 @@ start = False
 java_argument = None
 type_ = "client"
 debug = False
-system = system.get_os()
+osName = system.get_os()
 
 parser = MyParser()
 
@@ -109,13 +109,13 @@ else:
     else:
         logging.basicConfig(level=logging.INFO)
 
-if system == "linux":
+if osName == "linux":
     try:
         temp_directory = os.environ["TMPDIR"]
     except:
         temp_directory = "/tmp"
     gally_path = "%s/.gally_launcher" % (os.environ["HOME"])
-elif system == "windows":
+elif osName == "windows":
     temp_directory = os.environ["temp"]
     gally_path = "%s/gally_launcher" % (os.environ["appdata"])
 
@@ -127,19 +127,19 @@ if args["update"]:
         print("incorrect file")
         sys.exit()
 
-    if system == "linux":
+    if osName == "linux":
         url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher"
     else:
         url = "https://github.com/coni/gally_launcher/releases/download/latest/gally_launcher.exe"
 
     if request.download(url, executable_temp):
-        if system == "windows":
+        if osName == "windows":
             filename = sys.executable.split("\\")[-1]
             if os.path.isfile(temp_directory + "/" + filename):
                 os.remove(temp_directory + "/" + filename)
             os.rename(executable_fullpath, temp_directory + "/" + filename)
         os.rename(executable_temp, executable_fullpath)
-        if system == "linux":
+        if osName == "linux":
             system.command("chmod +x %s" % executable_fullpath)
             
         logging.info("sucessfully updated")
@@ -160,13 +160,13 @@ if args["test"]:
 
 
 if args["install"]:
-    if system == "linux":
+    if osName == "linux":
         if getattr(sys, 'frozen', False):
             executable_fullpath =  sys.executable
         elif __file__:
             print("incorrect file")
             sys.exit()
-        if system == "linux":
+        if osName == "linux":
             delim = "/"
         else:
             delim = "\\"
@@ -185,7 +185,7 @@ if args["install"]:
         if bin_path:
             try:
                 filename = system.cp(executable_fullpath, bin_path + "gally_launcher")
-                if system == "linux":
+                if osName == "linux":
                     os.system("chmod +x %s" % filename)
                 logging.info("sucessfully installed gally_launcher to the path (%s)", bin_path)
             except PermissionError:
