@@ -459,7 +459,7 @@ class gally_launcher:
             mainJar = "%s/%s/%s.jar" % (self.versions_root, self.version, self.version)
             for version_parser in inheritsFrom:
                 download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root, version_parser.version), version_parser.version)
-                if os.path.isfile(mainJar) == False:
+                if os.path.isfile(mainJar) == False or os.path.getsize(mainJar) == 0:
                     mainJar = "%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version)
                 download_libraries(version_parser.json_loaded["libraries"], self.libraries_root, self.system)
                 if assets == True:
