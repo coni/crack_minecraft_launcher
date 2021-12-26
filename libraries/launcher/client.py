@@ -225,7 +225,7 @@ class gally_launcher:
             logging.debug("authorisation granted")
             auth_response = json.loads(req.read().decode())
 
-            self.version_parser.set_username(auth_response["selectedProfile"]["name"])
+            self.set_username(auth_response["selectedProfile"]["name"])
             self.access_token = auth_response["accessToken"]
             
             if self.localid == None:
@@ -488,10 +488,13 @@ class gally_launcher:
             for version_parser in inheritsFrom:
                 game_argument += self.get_minecraft_arguments(version_parser.minecraft_arguments(), version_parser)
 
-        if ip and port:
+        if ip:
             game_argument.append("--server %s" % ip)
-            game_argument.append("--port %s" % port)
-        
+            if port:
+                game_argument.append("--port %s" % port)
+            else:
+                game_argument.append("--port 25565")
+                
         # Java argumennts
         default_arguments = []
         if java_argument:
