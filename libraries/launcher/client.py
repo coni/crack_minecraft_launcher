@@ -96,27 +96,22 @@ class gally_launcher:
             return None
 
     def download_java(self, platform, component, path):
-
         import libraries.download.java as jre_downloader
         java_manifest_url = jre_downloader.get_manifest(platform,component)
-        java_manifest_path = "%s/java_manifest.json" % temp_directory
-        system.rm_rf(java_manifest_path)
+        java_manifest_path = "%s/java_manifest.json" % self.minecraft_root
         java_manifest = None
-        if request.download(java_manifest_url, java_manifest_path):
+        if request.download(java_manifest_url, java_manifest_path, replace=True):
             with open(java_manifest_path, "r") as temp:
                 java_manifest = json.load(temp)
             jre_downloader.download_java(java_manifest, path)
-
         return "%s/bin" % path
 
-    def get_uuid(self, username=None):
-        if username != None:
-            req = request.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
-            if req:
-                return json.loads(req)["id"]
-
-        uuid_ = str(uuid.uuid1()).replace("-","")
-        logging.debug("[request] generate uuid : %s" % uuid_)
+    def get_uuid(self, username):
+        req = request.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
+        if req:
+            uuid_ = json.loads(req)["id"]
+        else:
+            uuid_ = username
         return uuid_
 
     def download_openjdk(self, version=None):

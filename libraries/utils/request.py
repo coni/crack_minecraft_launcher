@@ -26,7 +26,7 @@ def is_connected():
         pass
     return False
 
-def download(url="", filename="", multiple_files=[], total_size=0, string="", exist_ignore=False):
+def download(url="", filename="", multiple_files=[], total_size=0, string="", replace=False):
 
     osNamae = system.get_os()
     if osNamae == "linux":
@@ -39,10 +39,6 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
         delim = "\\"
         temp_directory = os.environ["temp"] + "/gally_launcher"
 
-    if exist_ignore:
-        is_file = False
-    else:
-        is_file = os.path.isfile(filename)
     
     if delim:
         path = delim.join(filename.split(delim)[:-1])
@@ -50,7 +46,6 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
             if os.path.isdir(path) == False:
                 system.mkdir_recurcive(path)
         
-    
     if url and filename:
         url = urllib.parse.quote(url).replace("%3A",":")
         multiple_files.append((url, filename, total_size))
@@ -61,7 +56,7 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", ex
         filename = path.split(delim)[-1]
         temp_filename = "%s/%s" % (temp_directory, filename)
 
-        if os.path.isfile(path) == False:
+        if os.path.isfile(path) == False or replace == True:
             
             directory = delim.join(path.split(delim)[:-1])
             temp_directory = delim.join(temp_filename.split(delim)[:-1])

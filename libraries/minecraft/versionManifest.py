@@ -11,8 +11,7 @@ class versionManifest:
 
         manifest_versions_path = "%s/%s" % (self.versions_path, "version_manifest_v2.json")
 
-        system.rm_rf(manifest_versions_path)
-        request.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path)
+        request.download("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json", manifest_versions_path, replace=True)
 
         json_file = open(manifest_versions_path,"r")
         self.json_loaded = json.load(json_file) 
