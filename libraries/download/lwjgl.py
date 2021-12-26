@@ -4,16 +4,16 @@ import os
 
 temp_dir = "/tmp/gally_launcher"
 
-def download_binary(lwjgl_version, path, system):
+def download_binary(lwjgl_version, path, osName):
 
     binary_url = []
     if lwjgl_version.split(".")[0] == "3":
         
         if os.path.isdir(path) == False:
-            base_url_x64 = "https://build.lwjgl.org/release/%s/%s/x64" % (lwjgl_version, system)
+            base_url_x64 = "https://build.lwjgl.org/release/%s/%s/x64" % (lwjgl_version, osName)
             base_url_x86 = "https://build.lwjgl.org/release/%s/windows/x86" % lwjgl_version
 
-            if system == "windows":
+            if osName == "windows":
 
                 binary_url.append("%s/%s" % (base_url_x64, "glfw.dll"))
                 binary_url.append("%s/%s" % (base_url_x64, "jemalloc.dll"))
@@ -28,7 +28,7 @@ def download_binary(lwjgl_version, path, system):
                 binary_url.append("%s/%s" % (base_url_x86, "lwjgl32.dll"))
                 binary_url.append("%s/%s" % (base_url_x86, "OpenAL32.dll"))
 
-            elif system == "linux":
+            elif osName == "linux":
                 binary_url.append("%s/%s" % (base_url_x64, "libglfw.so"))
                 binary_url.append("%s/%s" % (base_url_x64, "libglfw_wayland.so"))
                 binary_url.append("%s/%s" % (base_url_x64, "libjemalloc.so"))
@@ -64,6 +64,6 @@ def download_binary(lwjgl_version, path, system):
             list_folder_extracted = system.extract_archive(zip_filename, temp_dir)
 
             for folder in list_folder_extracted:
-                if folder == "lwjgl-%s/native/%s/" % (lwjgl_version, system):
-                    system.mv("%s/lwjgl-%s/native/%s/" % (temp_dir, lwjgl_version, system),"%s" % path)
+                if folder == "lwjgl-%s/native/%s/" % (lwjgl_version, osName):
+                    system.mv("%s/lwjgl-%s/native/%s/" % (temp_dir, lwjgl_version, osName),"%s" % path)
     return True

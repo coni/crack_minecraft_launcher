@@ -463,8 +463,8 @@ class gally_launcher:
                 classpath[index] = "%s/%s" % (self.libraries_root, classpath[index])
 
             if not main_jar:
-                classpath.append("%s/%s/%s" % (self.versions_root, self.version, self.version))
-
+                main_jar = ("%s/%s/%s" % (self.versions_root, self.version, self.version))
+            classpath.append(main_jar)
             for version_parser in inheritsFrom:
                 download_client(version_parser.json_loaded,"%s/%s" % (self.versions_root,self.version), version_parser.version)
                 classpath.append("%s/%s/%s.jar" % (self.versions_root, version_parser.version, version_parser.version))
@@ -523,6 +523,7 @@ class gally_launcher:
             with open("debug/java", "r") as java_file:
                 java = java_file.read()
         elif java == None:
+            component = self.version_parser.get_java_component()
             for version_parser in inheritsFrom:
                 if version_parser.javaVersion > self.javaVersion:
                     self.javaVersion = version_parser.javaVersion
