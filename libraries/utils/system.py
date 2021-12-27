@@ -28,10 +28,10 @@ def chdir(directory):
 
 def get_architechture():
     architecture = platform.machine()
+    if architecture == "AMD64":
+        architecture = "x64"
     logging.debug("getting architechture : %s" % architecture)
     return architecture
-
-
 
 def mkdir_recurcive(path):
     logging.debug("[file] making directory %s" % path)
@@ -41,9 +41,11 @@ def mkdir_recurcive(path):
     delim = ""
     if "/" in path:
         delim = "/"
+        delim_ = "\\"
     elif "\\" in path:
         delim = "\\"
-    
+        delim_ = "/"
+    path = path.replace(delim_,delim)
     if delim != "":
         path_splitted = path.split(delim)
 

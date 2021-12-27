@@ -16,8 +16,8 @@ elif osNamae == "windows":
 
 java_manifest = "https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json"
 
-def get_manifest(platform, component):
-    java_manifest_path = temp_directory + "/all.json"
+def get_manifest(platform, component, path):
+    java_manifest_path = path + "/all.json"
     java_manifest_json = None
     url = None
     if request.download(java_manifest, java_manifest_path):

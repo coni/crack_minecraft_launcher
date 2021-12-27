@@ -97,7 +97,7 @@ class gally_launcher:
 
     def download_java(self, platform, component, path):
         import libraries.download.java as jre_downloader
-        java_manifest_url = jre_downloader.get_manifest(platform,component)
+        java_manifest_url = jre_downloader.get_manifest(platform,component,self.minecraft_root)
         java_manifest_path = "%s/java_manifest.json" % self.minecraft_root
         java_manifest = None
         if request.download(java_manifest_url, java_manifest_path, replace=True):
@@ -527,6 +527,8 @@ class gally_launcher:
                     component = version_parser.get_java_component()
 
             java_path = "%s/runtime/%s/%s/%s" % (self.minecraft_root, component, platform, component)
+            if platform == "windows":
+                platform += "-%s" % self.architecture
             self.download_java(platform, component, java_path)
             java_path += "/bin"
 

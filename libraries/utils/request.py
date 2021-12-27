@@ -31,13 +31,16 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", re
     osNamae = system.get_os()
     if osNamae == "linux":
         delim = "/"
+        delim_ = "\\"
         try:
             temp_directory = os.environ["TMPDIR"]
         except:
             temp_directory = "/tmp/gally_launcher"
     elif osNamae == "windows":
         delim = "\\"
-        temp_directory = os.environ["temp"] + "/gally_launcher"
+        delim_ = "/"
+        temp_directory = os.environ["temp"] + delim + "gally_launcher"
+        
 
     
     if delim:
@@ -53,16 +56,18 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", re
     all_size = 0
     block_sz = 8192
     for url, path, size in  multiple_files:
+        path = path.replace(delim_,delim)
         filename = path.split(delim)[-1]
-        temp_filename = "%s/%s" % (temp_directory, filename)
+        temp_filename = temp_directory + delim + filename
 
         if os.path.isfile(path) == False or replace == True:
-            
             directory = delim.join(path.split(delim)[:-1])
             temp_directory = delim.join(temp_filename.split(delim)[:-1])
             if directory:
                 if os.path.isdir(directory) == False:
                     system.mkdir_recurcive(directory)
+                    
+                if os.path.isdir(temp_directory) == False:
                     system.mkdir_recurcive(temp_directory)
             
             try:
@@ -86,8 +91,6 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", re
 
             except KeyboardInterrupt:
                 sys.exit()
-            except:
-                logging.debug("[web] can't download %s from %s" % (filename, url))
         else:
             all_size += size
     return True
