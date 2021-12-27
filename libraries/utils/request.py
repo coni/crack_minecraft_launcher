@@ -6,7 +6,6 @@ import libraries.utils.system as system
 import uuid
 import logging
 import json
-import re
 import socket
 
 
@@ -25,6 +24,9 @@ def is_connected():
     except OSError:
         pass
     return False
+    
+def get_uuid():
+    return str(uuid.uuid4())
 
 def download(url="", filename="", multiple_files=[], total_size=0, string="", replace=False):
 
