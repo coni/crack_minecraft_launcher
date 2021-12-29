@@ -67,7 +67,7 @@ class gally_launcher:
         self.opt_java_arg = None
         self.profile_gamedir = None
         self.profile_id = None
-        self.access_token = "None"
+        self.accessToken = "None"
         self.localid = None
 
         if os.path.isdir(self.minecraft_root) == False:
@@ -226,13 +226,13 @@ class gally_launcher:
             auth_response = json.loads(req.read().decode())
 
             self.set_username(auth_response["selectedProfile"]["name"])
-            self.access_token = auth_response["accessToken"]
+            self.accessToken = auth_response["accessToken"]
             
             if self.localid == None:
                 localid = request.get_uuid()
 
             accounts_information = {
-                "accessToken" : self.access_token,
+                "accessToken" : self.accessToken,
                 "minecraftProfile":auth_response["selectedProfile"],
                 "localId":self.localid, "username":email,
                 "remoteId":auth_response["clientToken"]
@@ -250,11 +250,11 @@ class gally_launcher:
             if self.launcher_accounts["accounts"][id]["username"] == email:
                 self.localid = id
                 if "accessToken" in self.launcher_accounts["accounts"][id]:
-                    self.access_token = self.launcher_accounts["accounts"][id]["accessToken"]
+                    self.accessToken = self.launcher_accounts["accounts"][id]["accessToken"]
                     self.set_username(self.launcher_accounts["accounts"][id]["minecraftProfile"]["name"])
                     client_token = self.launcher_accounts["accounts"][id]["remoteId"]
-                    if self.validate(self.access_token, client_token) == False:
-                        if self.refresh(self.access_token, client_token) == True:
+                    if self.validate(self.accessToken, client_token) == False:
+                        if self.refresh(self.accessToken, client_token) == True:
                             return True
                     else:
                         return True
@@ -265,7 +265,7 @@ class gally_launcher:
         self.authenticate(email, password)
 
     def logout(self, email, password=None):
-        headers={'Content-type':'application/json'}
+        headers={'Content-Type':'application/json'}
 
         for id in self.launcher_accounts["accounts"]:
             self.localid = id
@@ -305,14 +305,14 @@ class gally_launcher:
             "accessToken": accessToken,
             "clientToken": clientToken
         }
-        headers={'Content-type':'application/json'}
+        headers={'Content-Type':'application/json'}
         resp = request.post("https://authserver.mojang.com/refresh", payload, headers=headers)
 
         if resp.status == 200 or resp.status == 204:
             auth_response = json.loads(resp.read())
             if "accessToken" in auth_response:
-                self.access_token = auth_response["accessToken"]
-                self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.access_token
+                self.accessToken = auth_response["accessToken"]
+                self.launcher_accounts["accounts"][self.localid]["accessToken"] =  self.accessToken
                 system.write_file(self.launcher_accounts_file, json.dumps(self.launcher_accounts))
                 return True
         else:
@@ -324,7 +324,7 @@ class gally_launcher:
             "clientToken": clientToken
         }
         
-        headers = {'Content-type':'application/json'}
+        headers = {'Content-Type':'application/json'}
         resp = request.post("https://authserver.mojang.com/validate", payload, headers=headers)
 
         if resp.status == 204:
@@ -332,12 +332,47 @@ class gally_launcher:
         else:
             return False
 
+    def setSkin(self, skinFile, variant, accessToken=""):
+        url = "https://api.minecraftservices.com/minecraft/profile/skins"
+        skinFileData = b""
+
+        if not accessToken:
+            accessToken = self.accessToken
+
+        if os.path.isfile(skinFile):
+            with open(skinFile, "rb") as _skinFile:
+                skinFileData = _skinFile.read()
+        else:
+            sys.stdout.write("the file %s doesn't exist" % skinFile)
+            return False
+
+        headers = {
+            "Authorization": "Bearer %s" % accessToken,
+            "Content-Type": "multipart/form-data;boundary=xoxo"
+        }
+        boundary = "xoxo".encode()
+        payload = []
+        payload.append(b"--%b" % boundary)
+        payload.append(b'Content-Disposition: form-data;name="variant"')
+        payload.append(b"")
+        payload.append(variant.encode())
+        payload.append(b"--%b" % boundary)
+        payload.append(b'Content-Disposition: form-data;name="file";filename="alex.png"')
+        payload.append(b'Content-Type: image/png')
+        payload.append(b"")
+        payload.append(skinFileData)
+        payload.append(b"--%b--" % boundary)
+
+        if request.post(url, payload, headers=headers).status == 200:
+            return True
+        return False
+
     def set_uuid(self, username=None, uuid=None):
         if username:
             self.uuid = self.get_uuid(username)
         else:
             self.uuid = uuid
-    
+
     def get_minecraft_arguments(self, arguments, version_parser):
 
         arguments_var = {}
@@ -347,7 +382,7 @@ class gally_launcher:
         arguments_var["${assets_root}"] = arguments_var["${game_assets}"] = "assets"
         arguments_var["${assets_index_name}"] = version_parser.get_assetIndex()
         arguments_var["${auth_uuid}"] = self.uuid
-        arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = self.access_token
+        arguments_var["${auth_access_token}"] = arguments_var["${auth_session}"] = self.accessToken
         arguments_var["${user_type}"] = "mojang"
         arguments_var["${version_type}"] = version_parser.get_versionType()
         arguments_var["${user_properties}"] = "{}"
@@ -569,8 +604,8 @@ class gally_launcher:
                 command = "start \"\" \"%s\" %s" % (java, JAVA_ARGUMENT)
                 
 
-        if self.access_token:
-            logging.debug(command.replace(self.access_token, "??????????"))
+        if self.accessToken:
+            logging.debug(command.replace(self.accessToken, "??????????"))
         else:
             logging.debug(command)
 

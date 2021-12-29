@@ -108,13 +108,33 @@ def get(url):
         return False
     return response.read()
 
+def encodeJson(data):
+    encoded = b"{"
+
+    for i in data:
+        encoded += b'"%b":' % i.encode()
+
+        if type(data[i]) == bytes:
+            encoded += b"%b," % data[i]
+        elif type(data[i]) == int:
+             encoded += b'%b,' % str(data[i]).encode()
+        else:
+             encoded += b'"%b",' % str(data[i]).encode()
+
+    encoded = encoded[:-1] + b"}"
+
+    return encoded
+
 def post(url, data, headers=None):
-    data = json.dumps(data).encode()
-    
     req =  urllib.request.Request(url)
     if headers:
         for i in headers:
             req.add_header(i, headers[i])
+
+    if type(data) == dict:
+        data = encodeJson(data)
+    elif type(data) == list:
+        data = b"\n".join(data)
 
     try:
         resp = urllib.request.urlopen(

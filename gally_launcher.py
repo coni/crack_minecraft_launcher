@@ -6,19 +6,12 @@ from libraries.launcher.client import gally_launcher
 from libraries.launcher.server import minecraft_server
 import libraries.utils.request as request
 import libraries.utils.system as system
-import json
 
 class MyParser(argparse.ArgumentParser):
     def help(self):
         self.print_help()
         sys.exit(2)
 
-if len(sys.argv) > 1:
-    arguments = True
-else:
-    arguments = False
-
-version = "still_beta_im_sorry_for_the_commit"
 start = False
 java_argument = None
 type_ = "client"
@@ -32,7 +25,11 @@ parser.add_argument("-t", "--type", help="Launcher type (client|server)")
 parser.add_argument("-password", "--password", help="password to login to a Mojang account")
 parser.add_argument("-email", "--email", help="email to login to a Mojang account")
 parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
-parser.add_argument("-login", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
+parser.add_argument("-l", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
+parser.add_argument("-S", "--skin", help="set skin to an account")
+parser.add_argument("-Sv", "--skin_variant", help="set skin variant (slim or classic)")
+
+
 
 parser.add_argument("-d", "--download", help="download client")
 parser.add_argument("-v", "--version", help="Load version")
@@ -69,7 +66,7 @@ if type_ == "client":
 
     parser.add_argument("-uuid_of", "--uuid_of", help="(only for offline player) choose the uuid of a player")
     parser.add_argument("-uuid", "--uuid", help="(only for offline player) choose an uuid")
-    
+
 elif type_ == "server":
     parser.add_argument("-motd", "--motd", help="server displayed message (Default = A Minecraft Server")
     parser.add_argument("-pvp", "--pvp", help="friendly fire (Default = true)")
@@ -141,23 +138,11 @@ if args["update"]:
         os.rename(executable_temp, executable_fullpath)
         if osName == "linux":
             system.command("chmod +x %s" % executable_fullpath)
-            
+
         logging.info("sucessfully updated")
     else:
         logging.info("An error occured")
     sys.exit()
-
-if args["test"]:
-    import libraries.minecraft.java as hihi
-    java_manifest_url = hihi.get_manifest("linux","jre-legacy")
-
-    java_manifest_path = "/tmp/java_manifest.json"
-    java_manifest = None
-    if request.download(java_manifest_url, java_manifest_path):
-        with open(java_manifest_path, "r") as temp:
-            java_manifest = json.load(temp)
-        hihi.download_java(java_manifest, "./java/")
-
 
 if args["install"]:
     if osName == "linux":
@@ -194,7 +179,7 @@ if args["install"]:
             logging.error("Can't find correct PATH..")
     else:
         logging.error("this feature is only for the linux users")
-        
+
 if args["credit"]:
     print("author : coni (github.com/coni)")
     print("made with love <3")
@@ -236,22 +221,22 @@ if type_ == "client":
         launcher.set_username(args["username"])
     else:
         launcher.set_username("steve")
-        
+
     if args["without_assets"]:
         assets = False
-    
+
     if args["uuid_of"]:
         launcher.set_uuid(username=args["uuid_of"])
-    
+
     if args["uuid"]:
         launcher.set_uuid(uuid=args["uuid_of"])
-        
+
     if args["profile"]:
         start = launcher.load_profile(args["profile"])
 
     if args["version"]:
         start = launcher.load_version(args["version"])
-    
+
     if args["gameDirectory"]:
         game_directory = args["gameDirectory"]
     else:
@@ -259,6 +244,17 @@ if type_ == "client":
 
     if args["email"] and args["logout"] == False:
         launcher.login(args["email"], args["password"])
+
+    if args["skin"]:
+        if not args["skin_variant"]:
+            args["skin_variant"] = "classic"
+        if args["skin_variant"] != "classic" and args["skin_variant"] != "slim":
+            sys.stdout.write("skin variant must be slim or classic.")
+            sys.exit()
+        if launcher.setSkin(args["skin"], args["skin_variant"]):
+            sys.stdout.write("skin has been set successfully\n")
+        else:
+            sys.stdout.write("an error occured\n")
 
     if start:
         launcher.start(
