@@ -17,6 +17,7 @@ import json
 import sys
 import getpass
 import re
+import base64
 
 osName = system.get_os()
 if osName == "linux":
@@ -323,7 +324,7 @@ class gally_launcher:
             "accessToken": accessToken,
             "clientToken": clientToken
         }
-        
+
         headers = {'Content-Type':'application/json'}
         resp = request.post("https://authserver.mojang.com/validate", payload, headers=headers)
 
@@ -331,6 +332,28 @@ class gally_launcher:
             return True
         else:
             return False
+
+    def getId(self, username):
+        resp = request.get("https://api.mojang.com/users/profiles/minecraft/%s" % username)
+        if resp:
+            resp = json.loads(resp.decode())["id"]
+        return resp
+
+    def getPlayerSkin(self, id):
+        url = "https://sessionserver.mojang.com/session/minecraft/profile/%s" % id
+        resp = request.get(url)
+        if resp:
+            resp = json.loads(resp.decode())["properties"][0]["value"]
+        else:
+            return ()
+        resp = json.loads(base64.b64decode(resp).decode())
+        skinUrl = resp["textures"]["SKIN"]["url"]
+        if "metadata" in resp["textures"]["SKIN"]:
+            skinVariant = resp["textures"]["SKIN"]["metadata"]["model"]
+        else:
+            skinVariant = "classic"
+
+        return skinUrl, skinVariant
 
     def setSkin(self, skinFile, variant, accessToken=""):
         url = "https://api.minecraftservices.com/minecraft/profile/skins"

@@ -26,10 +26,10 @@ parser.add_argument("-password", "--password", help="password to login to a Moja
 parser.add_argument("-email", "--email", help="email to login to a Mojang account")
 parser.add_argument("-logout", "--logout", action="store_true", help="disconnect to a Mojang account")
 parser.add_argument("-l", "--login", action="store_true", help="login to a mojang account (with a prompt for email and password)")
-parser.add_argument("-S", "--skin", help="set skin to an account")
-parser.add_argument("-Sv", "--skin_variant", help="set skin variant (slim or classic)")
-
-
+parser.add_argument("-S", "--skin", help="Set skin to an account")
+parser.add_argument("-Sv", "--skin_variant", help="Set skin variant (slim or classic)")
+parser.add_argument("-So", "--skin_of", help="Copy the player's skin")
+parser.add_argument("-Sd", "--skin_download", help="Download someone skin")
 
 parser.add_argument("-d", "--download", help="download client")
 parser.add_argument("-v", "--version", help="Load version")
@@ -245,9 +245,15 @@ if type_ == "client":
     if args["email"] and args["logout"] == False:
         launcher.login(args["email"], args["password"])
 
-    if args["skin"]:
-        if not args["skin_variant"]:
-            args["skin_variant"] = "classic"
+    if args["skin"] or args["skin_of"]:
+        if args["skin"]:
+            if not args["skin_variant"]:
+                args["skin_variant"] = "classic"
+        elif args["skin_of"]:
+            args["skin"], variant = launcher.getPlayerSkin(launcher.getId(args["skin_of"]))
+            if not args["skin_variant"]:
+                args["skin_variant"] = variant
+
         if args["skin_variant"] != "classic" and args["skin_variant"] != "slim":
             sys.stdout.write("skin variant must be slim or classic.")
             sys.exit()
@@ -255,6 +261,9 @@ if type_ == "client":
             sys.stdout.write("skin has been set successfully\n")
         else:
             sys.stdout.write("an error occured\n")
+    if args["skin_download"]:
+        url, variant = launcher.getPlayerSkin(launcher.getId(args["skin_download"]))
+        request.download(url,"%s.png" % args["skin_download"])
 
     if start:
         launcher.start(
