@@ -342,26 +342,33 @@ class gally_launcher:
         if os.path.isfile(skinFile):
             with open(skinFile, "rb") as _skinFile:
                 skinFileData = _skinFile.read()
-        else:
-            sys.stdout.write("the file %s doesn't exist" % skinFile)
-            return False
 
-        headers = {
-            "Authorization": "Bearer %s" % accessToken,
-            "Content-Type": "multipart/form-data;boundary=xoxo"
-        }
-        boundary = "xoxo".encode()
-        payload = []
-        payload.append(b"--%b" % boundary)
-        payload.append(b'Content-Disposition: form-data;name="variant"')
-        payload.append(b"")
-        payload.append(variant.encode())
-        payload.append(b"--%b" % boundary)
-        payload.append(b'Content-Disposition: form-data;name="file";filename="alex.png"')
-        payload.append(b'Content-Type: image/png')
-        payload.append(b"")
-        payload.append(skinFileData)
-        payload.append(b"--%b--" % boundary)
+            headers = {
+                "Authorization": "Bearer %s" % accessToken,
+                "Content-Type": "multipart/form-data;boundary=xoxo"
+            }
+            boundary = "xoxo".encode()
+            payload = []
+            payload.append(b"--%b" % boundary)
+            payload.append(b'Content-Disposition: form-data;name="variant"')
+            payload.append(b"")
+            payload.append(variant.encode())
+            payload.append(b"--%b" % boundary)
+            payload.append(b'Content-Disposition: form-data;name="file";filename="alex.png"')
+            payload.append(b'Content-Type: image/png')
+            payload.append(b"")
+            payload.append(skinFileData)
+            payload.append(b"--%b--" % boundary)
+
+        else:
+            headers = {
+                "Authorization": "Bearer %s" % accessToken,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "variant": variant,
+                "url": skinFile
+            }
 
         if request.post(url, payload, headers=headers).status == 200:
             return True
