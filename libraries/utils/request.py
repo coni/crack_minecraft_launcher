@@ -83,7 +83,7 @@ def download(url="", filename="", multiple_files=[], total_size=0, string="", re
 
                     all_size += len(buffer)
                     f.write(buffer)
-                    if string:
+                    if string and total_size != 0:
                         status = r"%s [%i%%]    " % (string, all_size * 100. / total_size)
                         status = status + chr(8)*(len(status)+1)
                         sys.stdout.flush()

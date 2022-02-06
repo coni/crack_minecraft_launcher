@@ -26,14 +26,16 @@ class versionManifest:
 
     def get_versions(self, version_type="all"):
         # version_type : old_alpha, old_beta, snapshot, release, downloaded
-        logging.debug("check every %s version of minecraft" % version_type)
         if version_type == "beta" or version_type == "b" or version_type == "old_beta":
             version_type = "old_beta"
 
-        if version_type == "alpha" or version_type == "a" or version_type == "old_alpha":
+        elif version_type == "alpha" or version_type == "a" or version_type == "old_alpha":
             version_type = "old_alpha"
         
-        if version_type == "downloaded" or version_type == "d":
+        elif version_type == "release" or version_type == "r":
+            version_type = "release"
+        
+        elif version_type == "downloaded" or version_type == "d":
             return self.get_downloaded_versions()
 
         versions = []

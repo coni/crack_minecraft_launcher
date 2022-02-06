@@ -11,7 +11,7 @@ def download_libraries(libraries, libraries_root, system):
         
         filename = "%s.jar" % "-".join(librarie_name[-2:])
         path = "%s/%s" % ("/".join(librarie_name[0].split(".")), "/".join(librarie_name[1:]))
-        fullpath = "%s/%s/%s" % (libraries_root, path, filename)
+        fullpath = "%s/%s" % (path, filename)
         size = 0
 
         if type(libraries) == dict:
@@ -35,7 +35,7 @@ def download_libraries(libraries, libraries_root, system):
         elif type(libraries) == list:
             if "url" in i:
                 url = "%s/%s" % (i["url"], fullpath)
-                path = fullpath
+                path = "%s/%s" % (libraries_root, fullpath)
             else:
                 if "downloads" in i:
                     if "artifact" in i["downloads"]:
@@ -50,5 +50,4 @@ def download_libraries(libraries, libraries_root, system):
             if url:
                 to_download.append((url, path, size))
         total_size += size
-    
     request.download(multiple_files=to_download, total_size=total_size, string="downloading libraries")

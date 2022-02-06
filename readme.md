@@ -25,19 +25,16 @@ Download the [latest release](https://github.com/coni/gally_launcher/releases/do
 I highly recommend using Gally Launcher with a terminal such as cmd.exe or any other Linux terminal. If you don't know how to use a terminal, I suggest you look for guides on the Internet. It is really important to know the basics of a terminal. It's not really complicated to learn how to use a terminal don't worry
 
 ### Exemple
-To simply start Minecraft with "coni" as username in 1.18
+To simply start Minecraft with "coni" as username in 1.18.1
 ```bash
-gally_launcher -u coni -v 1.18
+gally_launcher -u coni -v 1.18.1
 ```  
 or if you use Python
 ```bash
-python3 __main__.py -u coni -v 1.18
+python3 gally_launcher.py -u coni -v 1.18.1
 ```
 
 If you need help to use the launcher
 ```bash
 gally_launcher --help
-```
-
-## Why Gally?   
-she's my favorite fictional character
+``

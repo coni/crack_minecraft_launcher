@@ -147,7 +147,6 @@ class version:
             path = "%s/%s" % ("/".join(librarie_name[0].split(".")), "/".join(librarie_name[1:]))
             fullpath = "%s/%s" % (path, filename)
             classpath.append(fullpath)
-        
         return classpath
 
     def get_mainclass(self):

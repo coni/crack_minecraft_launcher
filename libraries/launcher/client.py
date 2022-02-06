@@ -529,6 +529,7 @@ class gally_launcher:
                 download_libraries(version_parser.json_loaded["libraries"], self.libraries_root, self.system)
                 if assets == True:
                     download_assets(version_parser.json_loaded, self.assets_root)
+            
             classpath.append(mainJar)
             classpath = self.classpath_separator.join(classpath)
 
