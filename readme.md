@@ -1,7 +1,7 @@
 
 
 # Gally launcher 
-![Gally_launcher](https://github.com/coni/gally_launcher/blob/main/gally_drinking.ico?raw=true)  
+![Gally_launcher](https://github.com/coni/gally_launcher/blob/main/ico.ico?raw=true)  
 
 Gally Launcher is a Minecraft Launcher in CLI (Command Line Interface). There is no GUI (Graphic User Interface) or any window interactible.
 
