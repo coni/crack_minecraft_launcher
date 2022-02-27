@@ -27,11 +27,11 @@ I highly recommend using Gally Launcher with a terminal such as cmd.exe or any o
 ### Exemple
 To simply start Minecraft with "coni" as username in 1.18.1
 ```bash
-gally_launcher -u coni -v 1.18.1
+gally_launcher --username coni --version 1.18.1
 ```  
 or if you use Python
 ```bash
-python3 gally_launcher.py -u coni -v 1.18.1
+python3 gally_launcher.py --username coni --version 1.18.1
 ```
 
 If you need help to use the launcher
